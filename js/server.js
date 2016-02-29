@@ -188,10 +188,27 @@ function get_cell( board, x, y ) {
     if ( y < 0 || board.length <= y ) {
         return null;
     }
-    if ( x < 0 || board[ y ].length <= x ) {
+    var row = board[ y ];
+    if ( x < 0 || row.length <= x ) {
         return null;
     }
     return board[ y ][ x ];
+} 
+
+function player_is_on_cell( player, cell ) {
+    return ( player && cell ) ? ( player.x == cell.x ) && ( player.y == cell.y ) : false;    
+}
+
+function get_state_player_on_cell( state, cell ) {
+    if ( state.players ) {
+        for ( var player_id in state.players ) {
+            var state_player = state.players[ player_id ];
+            if ( player_is_on_cell( state_player, cell ) ) {
+                return state_player;
+            }
+        }
+    }
+    return null;
 }
 
 // //////////////////////////////////////////////////
@@ -268,7 +285,7 @@ function apply_card( metadata, state, board, player, card ) {
     else if ( card == card_repair ) {
         state_player = repair( metadata, state, board, state_player );
     }
-    state.players[ metadata.ownPlayerID ] = state_player;
+    state.players[ state_player.id ] = state_player;
     return state;     
 }
 
@@ -276,6 +293,7 @@ function apply_card( metadata, state, board, player, card ) {
 // actions
 
 function move_3_forward( metadata, state, board, state_player ) {
+    console.log( '[server] player ' + state_player.id + ' moves 3 forward...' );
     state_player = move_forward( metadata, state, board, state_player );
     state_player = move_forward( metadata, state, board, state_player );
     state_player = move_forward( metadata, state, board, state_player );
@@ -283,102 +301,94 @@ function move_3_forward( metadata, state, board, state_player ) {
 }
 
 function move_2_forward( metadata, state, board, state_player ) {
+    console.log( '[server] player ' + state_player.id + ' moves 2 forward...' );
     state_player = move_forward( metadata, state, board, state_player );
     state_player = move_forward( metadata, state, board, state_player );
     return state_player;
 }
 
 function move_forward( metadata, state, board, state_player ) {
+    console.log( '[server] player ' + state_player.id + ' moves forward...' );
     if ( state_player.orientation == orientation_north ) {
-        log_debug( 'move_north', state_player.orientation );
         state_player = move_north( metadata, state, board, state_player );
     }
     else if ( state_player.orientation == orientation_east ) {
-        log_debug( 'move_east', state_player.orientation );
         state_player = move_east( metadata, state, board, state_player );
     }
     else if ( state_player.orientation == orientation_south ) {
-        log_debug( 'move_south', state_player.orientation );
         state_player = move_south( metadata, state, board, state_player );
     }
     else if ( state_player.orientation == orientation_west ) {
-        log_debug( 'move_west', state_player.orientation );
         state_player = move_west( metadata, state, board, state_player );
     }
     return state_player;
 }
 
 function move_backward( metadata, state, board, state_player ) {
+    console.log( '[server] player ' + state_player.id + ' moves backward...' );
     if ( state_player.orientation == orientation_north ) {
-        log_debug( 'move_south', state_player.orientation );
         state_player = move_south( metadata, state, board, state_player );
     }
     else if ( state_player.orientation == orientation_east ) {
-        log_debug( 'move_west', state_player.orientation );
         state_player = move_west( metadata, state, board, state_player );
     }
     else if ( state_player.orientation == orientation_south ) {
-        log_debug( 'move_north', state_player.orientation );
         state_player = move_north( metadata, state, board, state_player );
     }
     else if ( state_player.orientation == orientation_west ) {
-        log_debug( 'move_east', state_player.orientation );
         state_player = move_east( metadata, state, board, state_player );
     }
     return state_player;    
 }
 
 function slide_right( metadata, state, board, state_player ) {
+    console.log( '[server] player ' + state_player.id + ' slides right...' );
     if ( state_player.orientation == orientation_north ) {
-        log_debug( 'move_east', state_player.orientation );
         state_player = move_east( metadata, state, board, state_player );
     }
     else if ( state_player.orientation == orientation_east ) {
-        log_debug( 'move_south', state_player.orientation );
         state_player = move_south( metadata, state, board, state_player );
     }
     else if ( state_player.orientation == orientation_south ) {
-        log_debug( 'move_west', state_player.orientation );
         state_player = move_west( metadata, state, board, state_player );
     }
     else if ( state_player.orientation == orientation_west ) {
-        log_debug( 'move_north', state_player.orientation );
         state_player = move_north( metadata, state, board, state_player );
     }
     return state_player;    
 }
 
 function slide_left( metadata, state, board, state_player ) {
+    console.log( '[server] player ' + state_player.id + ' slides left...' );
     if ( state_player.orientation == orientation_north ) {
-        log_debug( 'move_west', state_player.orientation );
         state_player = move_west( metadata, state, board, state_player );
     }
     else if ( state_player.orientation == orientation_east ) {
-        log_debug( 'move_north', state_player.orientation );
         state_player = move_north( metadata, state, board, state_player );
     }
     else if ( state_player.orientation == orientation_south ) {
-        log_debug( 'move_east', state_player.orientation );
         state_player = move_east( metadata, state, board, state_player );
     }
     else if ( state_player.orientation == orientation_west ) {
-        log_debug( 'move_south', state_player.orientation );
         state_player = move_south( metadata, state, board, state_player );
     }
     return state_player;    
 } 
 
 function turn_left( metadata, state, board, state_player ) {
+    console.log( '[server] player ' + state_player.id + ' turns left...' );
     state_player.orientation = sanitize_orientation( state_player.orientation + 3 );
     return state_player; 
 }
 
 function turn_right( metadata, state, board, state_player ) {
+    console.log( '[server] player ' + state_player.id + ' turns right...' );
     state_player.orientation = sanitize_orientation( state_player.orientation + 1 );
     return state_player; 
 }
 
 function uturn( metadata, state, board, state_player ) {
+    console.log( '[server] player ' + state_player.id + ' uturns...' );
     state_player.orientation = sanitize_orientation( state_player.orientation + 2 );
     return state_player; 
 }
@@ -394,6 +404,7 @@ var live_max_points = 10;
 
 function damage( metadata, state, board, state_player ) {
     state_player.live -= 1;
+    console.log( '[server] player ' + state_player.id + ' damages itself: ' + state_player.live );
     if ( state_player.live <= 0 ) {
         return die( metadata, state, board, state_player );    
     }
@@ -403,12 +414,15 @@ function damage( metadata, state, board, state_player ) {
 function repair( metadata, state, board, state_player ) {
     if ( state_player.live < live_max_points ) {
         state_player.live += 1;
+        console.log( '[server] player ' + state_player.id + ' repairs itself: ' + state_player.live );
     }
     return state_player; 
 }
 
 function die( metadata, state, board, state_player ) {
+    state_player.alive = false;
     state_player.live = 0;
+    console.log( '[server] player ' + state_player.id + ' dies: ' + state_player.live );
     return state_player; 
 }
 
@@ -416,72 +430,96 @@ function die( metadata, state, board, state_player ) {
 // move
 
 function move_north( metadata, state, board, state_player ) {
-
+    console.log( '[server] player ' + state_player.id + ' moves north...' );
+    
     // wall
     var current_cell = get_cell( board, state_player.x, state_player.y ); 
     if ( current_cell.north ) {
+        console.log( '[server] player ' + state_player.id + ' hits north wall.' );
         return damage( metadata, state, board, state_player );            
     }
 
-    var target_cell  = get_cell( board, state_player.x, state_player.y - 1 ); 
-    return move_to_cell(  metadata, state, board, state_player, target_cell );    
+    var target_cell = get_cell( board, state_player.x, state_player.y - 1 ); 
+    return move_to_cell(  metadata, state, board, state_player, target_cell, move_north );    
 }
 
 function move_east( metadata, state, board, state_player ) {
+    console.log( '[server] player ' + state_player.id + ' moves east...' );
 
     // wall
     var current_cell = get_cell( board, state_player.x, state_player.y ); 
     if ( current_cell.east ) {
+        console.log( '[server] player ' + state_player.id + ' hits east wall.' );
         return damage( metadata, state, board, state_player );            
     }
 
     var target_cell  = get_cell( board, state_player.x + 1, state_player.y ); 
-    return move_to_cell(  metadata, state, board, state_player, target_cell );        
+    return move_to_cell(  metadata, state, board, state_player, target_cell, move_east );        
 }
 
 function move_south( metadata, state, board, state_player ) {
+    console.log( '[server] player ' + state_player.id + ' moves south...' );
 
     // wall
     var current_cell = get_cell( board, state_player.x, state_player.y ); 
     if ( current_cell.south ) {
+        console.log( '[server] player ' + state_player.id + ' hits south wall.' );
         return damage( metadata, state, board, state_player );            
     }
 
-    var target_cell  = get_cell( board, state_player.x, state_player.y + 1 );
-    return move_to_cell(  metadata, state, board, state_player, target_cell );        
+    var target_cell = get_cell( board, state_player.x, state_player.y + 1 ); 
+    return move_to_cell(  metadata, state, board, state_player, target_cell, move_south );        
 }
 
 function move_west( metadata, state, board, state_player ) {
+    console.log( '[server] player ' + state_player.id + ' moves west...' );
 
     // wall
     var current_cell = get_cell( board, state_player.x, state_player.y ); 
     if ( current_cell.west ) {
+        console.log( '[server] player ' + state_player.id + ' hits west wall.' );
         return damage( metadata, state, board, state_player );            
     }
 
-    var target_cell  = get_cell( board, state_player.x - 1, state_player.y );
-    return move_to_cell(  metadata, state, board, state_player, target_cell );
+    var target_cell = get_cell( board, state_player.x - 1, state_player.y );  
+    return move_to_cell(  metadata, state, board, state_player, target_cell, move_west );
 }
 
-function move_to_cell( metadata, state, board, state_player, cell ) {
+function move_to_cell( metadata, state, board, state_player, cell, push_fn ) {
     
     // out of board
     if ( !cell ) {
+        console.log( '[server] player ' + state_player.id + ' falls out of board.' );
         state_player.x = null;
         state_player.y = null;
         return die( metadata, state, board, state_player );
     }
     
+    // push other player if any
+    var state_other_player = get_state_player_on_cell( state, cell );
+    if ( state_other_player ) {
+         console.log( '[server] player ' + state_player.id + ' will push player ' + state_other_player.id + ' to cell ' + cell.x + 'x' + cell.y + '...' );
+         state_other_player = push_fn( metadata, state, board, state_other_player );
+         state.players[ state_other_player.id ] = state_other_player;    
+         // if other did not move, treat other robot as a wall
+         if ( player_is_on_cell( state_other_player, cell ) ) {
+            console.log( '[server] player ' + state_player.id + ' hits player ' + state_other_player.id + '.' );
+            return damage( metadata, state, board, state_player );                                                                        
+         }
+         console.log( '[server] player ' + state_player.id + ' pushes player ' + state_other_player.id + ' to cell ' + state_other_player.x + 'x' + state_other_player.y + '.' );
+    }
+    
     // move  
     state_player.x = cell.x;
     state_player.y = cell.y;
-    log_debug( 'move', state_player );
     
     // hole
     if ( cell.hole ) {
+        console.log( '[server] player ' + state_player.id + ' falls in hole ' + cell.x + '-' + cell.y + '.' );
         return die( metadata, state, board, state_player );            
     }
     
+    console.log( '[server] player ' + state_player.id + ' moves to cell ' + cell.x + '-' + cell.y + '.' );
     return state_player;        
 }
 
@@ -520,6 +558,7 @@ function build_start_state( metadata, start_cells ) {
         player.orientation = generate_first_orientation();
         player.active = ( plynd_player.status == 'has_turn' );
         player.cards = deal_player_cards( 10 );
+        player.alive = true;
         player.live = live_max_points;
         // console.log( '[server] < build_start_state: player: ' + JSON.stringify( player ) );
         players[ plynd_player_id ] = player;
@@ -530,6 +569,39 @@ function build_start_state( metadata, start_cells ) {
 
 function get_current_player( metadata ) {
     return metadata.players[ metadata.ownPlayerID ];
+}
+
+function compute_winner_ids( state ) {
+    var winner_ids = null;
+    for ( var player_id in state.players ) {
+        var player = state.players[ player_id ];
+        if ( player.alive === false ) {
+            continue;
+        }
+        if ( winner_ids ) {
+            // two players alive > no winner
+            return null;
+        }     
+        winner_ids = '' + player.id;
+    }
+    return winner_ids; 
+}
+
+function compute_eliminated_ids( state ) {
+    var eliminated_ids = null;
+    for ( var player_id in state.players ) {
+        var player = state.players[ player_id ];
+        if ( player.alive === true ) {
+            continue;
+        }
+        if ( !eliminated_ids ) {
+            eliminated_ids = '' + player.id;
+        }
+        else {     
+            eliminated_ids = eliminated_ids + ',' + player.id;
+        }
+    }
+    return eliminated_ids; 
 }
 
 // //////////////////////////////////////////////////
@@ -597,8 +669,19 @@ Plynd.ServerFunctions.play_cards = function( request, success, error ) {
             var board = get_board( metadata, state );
             var player = get_current_player( metadata, state );
             state = apply_cards( metadata, state, board, player, request.card_positions );
-            console.log( '[server] > play_cards: state: ' + JSON.stringify( state ) );
-            Plynd.updateGame( { endTurn: true, players: state.players }, state, success, error );
+            
+            var event = { endTurn: true, players: state.players };
+            var winnerID = compute_winner_ids( state );
+            if ( winnerID ) {
+                event.winnerID = winnerID;    
+            }
+            var eliminatedID = compute_eliminated_ids( state );
+            if ( eliminatedID ) {
+                event.eliminatedID = eliminatedID;    
+            }
+            console.log( '[server] > play_cards: event: ' + JSON.stringify( event ) );
+            
+            Plynd.updateGame( event, state, success, error );
         } );
     }
     catch( err ) {
