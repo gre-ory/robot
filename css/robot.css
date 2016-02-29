@@ -153,10 +153,11 @@ fieldset {
 /* --- robot --- */
 
 .robot {
+    margin: 6px;
+    /*
     width: 30px;
     height: 30px;
     margin: 5px;
-    /*
     width: 30px;
     height: 30px;
     border-radius: 5px;

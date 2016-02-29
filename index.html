@@ -12,24 +12,19 @@
         <link href="css/robot.css" type="text/css" rel="stylesheet" />
     </head>
     <body>
-        <div class="container">
-            <div class="row header">
-                <div id="button_container"></div>
+        <div class="container-fluid">
+            <div class="row">
+                <div id="button_container" class="col-md-12"></div>
             </div>
-            <div class="row main">
-                <div class="column left">
-                    <div id="player_container"></div>
-                </div>
-                <div class="column main">
-                    <div id="board_container"></div>
-                </div>
-                <div class="column right">
-                    <div id="players_container"></div>
-                </div>
+            <div class="row">
+                <div id="board_container" class="col-md-8"></div>
+                <div id="players_container" class="col-md-4"></div>
             </div>
-            <div class="row footer">
-                <div id="played_cards_container"></div>
-                <div id="cards_container"></div>
+            <div class="row">
+                <div id="played_cards_container" class="col-md-12"></div>
+            </div>
+            <div class="row">
+                <div id="cards_container" class="col-md-12"></div>
             </div>
         </div>
     </body>

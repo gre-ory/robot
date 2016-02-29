@@ -226,14 +226,15 @@ function board_to_html() {
 function robot_to_html( player ) {
     var robot_html = '';
     robot_html += '<div';
-    robot_html += ' class="robot btn btn-default orientation-' + ( player.orientation || '' ) + ' ' +  ( player.active ? 'active' : 'inactive' ) + '"';
+    robot_html += ' class="robot btn btn-default btn-xs orientation-' + ( player.orientation || '' ) + ' ' +  ( player.active ? 'active' : 'inactive' ) + '"';
     robot_html += ' title="robot: ' + player.name + '">';
     robot_html += '<span class="icon" title="robot: ' + player.name + '" style="color:' + player.color + ';"></span>';
     robot_html += '</div>'; 
     return robot_html;
 }
 
-function player_to_html( player ) {
+function player_to_html( player, badge ) {
+    /*
     var player_html = '';
     player_html += '<fieldset class="current"><legend>player</legend>'; 
     player_html += '<div';
@@ -244,39 +245,44 @@ function player_to_html( player ) {
     player_html += '</div>';
     player_html += '</fieldset>';
     return player_html;
+    */
+    var player_html = '';
+    player_html += '<li class="list-group-item" title="' + player.id + ' - ' + player.name + '">';
+    if ( badge ) {
+        player_html += '<span class="badge">' + badge + '</span>';
+    }
+    player_html += player.name;
+    // player_html += ' class="player ' + ( player.active ? 'active' : 'inactive' ) + '"';
+    // player_html += ' style="background-color:' + player.color + ';"';
+    // player_html += ' title="' + player.id + ' - ' + player.name + '">';
+    player_html += '</li>';
+    return player_html    
 }
 
-function players_to_html( allies, enemies ) {
+function players_to_html( player, allies, enemies ) {
     var players_html = '';
     
-    if ( allies && allies.length > 0 ) {
-        players_html += '<fieldset class="allies"><legend>allies</legend>';
-        for ( var i = 0 ; i < allies.length ; i++ ) {
-            var player = allies[ i ];
-            players_html += '<div';
-            players_html += ' class="player ' + ( player.active ? 'active' : 'inactive' ) + '"';
-            players_html += ' style="background-color:' + player.color + ';"';
-            players_html += ' title="' + player.id + ' - ' + player.name + '">';
-            players_html += player.name;
-            players_html += '</div>';
+    players_html += '<div class="panel panel-default">';
+    players_html += '<div class="panel-heading">players</div>';
+    players_html += '<ul class="list-group">';
+    
+    if ( player ) {
+        players_html += player_to_html( player, 'on' );        
+        if ( player.allies && player.allies.length > 0 ) {
+            for ( var i = 0 ; i < player.allies.length ; i++ ) {
+                players_html += player_to_html( player.allies[ i ], 'ally' );  
+            }
         }
-        players_html += '</fieldset>';
+        if ( player.enemies && player.enemies.length > 0 ) {
+            for ( var i = 0 ; i < player.enemies.length ; i++ ) {
+                players_html += player_to_html( player.enemies[ i ], 'enemy' );  
+            }
+        }
     }
     
-    if ( enemies && enemies.length > 0 ) {
-        players_html += '<fieldset class="enemies"><legend>enemies</legend>';
-        for ( var i = 0 ; i < enemies.length ; i++ ) {
-            var player = enemies[ i ];
-            players_html += '<div';
-            players_html += ' class="player ' + ( player.active ? 'active' : 'inactive' ) + '"';
-            players_html += ' style="background-color:' + player.color + ';"';
-            players_html += ' title="' + player.id + ' - ' + player.name + '">';
-            players_html += player.name;
-            players_html += '</div>';
-        }
-        players_html += '</fieldset>';
-    }
-    
+    players_html += '</ul>';
+    players_html += '</div>';
+
     return players_html;
 }
 
@@ -291,7 +297,7 @@ function display_board() {
 
 function display_player() {
     if ( _player ) {
-        $( '#player_container' ).html( player_to_html( _player ) );
+        // $( '#player_container' ).html( player_to_html( _player ) );
         if ( _player.active ) {
             $( '#button_container' ).html( '<button id="initialize" class="btn btn-success pull-right">initialize</button>' );
             $( '#initialize' ).on( 'click', function() { initialize_game() } );
@@ -301,7 +307,7 @@ function display_player() {
 
 function display_players() {
     if ( _player ) {
-        $( '#players_container' ).html( players_to_html( _player.allies, _player.enemies ) );
+        $( '#players_container' ).html( players_to_html( _player ) );
     } 
 }
 
