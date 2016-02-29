@@ -27,13 +27,13 @@ function on_error( event, metadata ) {
 }
 
 function on_metadata( metadata ) {
-    // log_debug( 'on_metadata: ', metadata );
+    log_debug( 'on_metadata: ', metadata );
     log_debug( 'on_metadata: ', '...' );
     _metadata = metadata;
 }
 
 function on_state( state ) {
-    // log_debug( 'on_state: ', state );
+    log_debug( 'on_state: ', state );
     log_debug( 'on_state: ', '...' );
     _state = state;
 }
@@ -114,7 +114,14 @@ function fill_player( player ) {
     var player_data = _metadata.players[ player.id ];
     player.name = player_data.playerName;
     player.color = player_data.playerColor;
-    player.active = ( player_data.status == 'has_turn' );
+    if ( _metadata.status == 'game_is_over' ) {
+        player.winner = ( player_data.status == 'winner' );
+        player.active = null;
+    }
+    else {
+        player.winner = null;
+        player.active = ( player_data.status == 'has_turn' );
+    }
     console.log( 'fill_player: player: ' + JSON.stringify( player ) );
     return player;
 }
@@ -148,79 +155,83 @@ function build_current_player() {
 // //////////////////////////////////////////////////
 // html
 
-function board_to_html() {
-    board_html  = '';
+function html_board() {
+    var html = '';
+    var html_border_cell = '<div class="cell col-xs-1 col-sm-1 col-md-1 col-lg-1" data-border></div>';
     if ( _board ) {
-        board_html += '<table id="board">';
+        html += '<div class="board container-fluid">';
         for ( var y = 0 ; y < _board.length ; y++ ) {
             var row = _board[ y ];
             
             if ( y == 0 ) {
-                board_html += '<tr>';
-                board_html += '<td data-border></td>';
+                html += '<div class="row">';
+                html += html_border_cell;
                 for ( var x = 0 ; x < row.length ; x++ ) {
-                    board_html += '<td data-border></td>';
+                    html += html_border_cell;
                 }
-                board_html += '<td data-border></td>';
-                board_html += '</tr>';
+                html += html_border_cell;
+                html += '</div>';
             }
             
-            board_html += '<tr>';
-            board_html += '<td data-border></td>';
+            html += '<div class="row">';
+            html += html_border_cell;
             for ( var x = 0 ; x < row.length ; x++ ) {
                 var cell = row[ x ];
                 var player = find_player_on_cell( cell );
                 
-                board_html += '<td data-x="' + cell.x + '" data-y="' + cell.y + '"';
+                html += '<div class="cell col-xs-1 col-sm-1 col-md-1 col-lg-1" data-x="' + cell.x + '" data-y="' + cell.y + '"';
                 if ( cell.north ) { 
-                    board_html += ' data-north';
+                    html += ' data-north';
                 }
                 if ( cell.south ) { 
-                    board_html += ' data-south';
+                    html += ' data-south';
                 }
                 if ( cell.east ) { 
-                    board_html += ' data-east';
+                    html += ' data-east';
                 }
                 if ( cell.west ) { 
-                    board_html += ' data-west';
+                    html += ' data-west';
                 }
                 if ( cell.hole ) { 
-                    board_html += ' data-hole';
+                    html += ' data-hole';
                 }
                 if ( cell.start ) { 
-                    board_html += ' data-start';
+                    html += ' data-start';
                 }
                 if ( cell.end ) { 
-                    board_html += ' data-end';
+                    html += ' data-end';
                 }
                 if ( cell.step ) { 
-                    board_html += ' data-step="' + cell.step + '"';
+                    html += ' data-step="' + cell.step + '"';
                 }
-                board_html += '>';
+                html += '>';
                 if ( player ) {
-                    board_html += robot_to_html( player );     
+                    html += robot_to_html( player );     
                 }
-                board_html += '</td>';
+                else {
+                    html += '&nbsp;';     
+                }
+                html += '</div>';
             } 
-            board_html += '<td data-border></td>';
-            board_html += '</tr>';
+            html += html_border_cell;
+            html += '</div>';
             
             if ( y == ( _board.length - 1 ) ) {
-                board_html += '<tr>';
-                board_html += '<td data-border></td>';
+                html += '<div class="row">';
+                html += html_border_cell;
                 for ( var x = 0 ; x < row.length ; x++ ) {
-                    board_html += '<td data-border></td>';
+                    html += html_border_cell;
                 }
-                board_html += '<td data-border></td>';
-                board_html += '</tr>';
+                html += html_border_cell;
+                html += '</div>';
             }
         }
-        board_html += '</table>';
+        html += '</div>';
     }
     else {
-        board_html += 'error while loading the board!'    
+        html += '<div class="alert alert-danger" role="alert">error while loading the board!</div>';
     }
-    return board_html;
+    return html;
 }
 
 function robot_to_html( player ) {
@@ -243,55 +254,76 @@ function player_to_html( player ) {
     return player_html    
 }
 
-function players_to_html( player, allies, enemies ) {
-    var players_html = '';
+function html_players( player ) {
+    var html = '';
     
-    players_html += '<div class="panel panel-default">';
-    players_html += '<div class="panel-heading">players</div>';
-    players_html += '<ul class="list-group">';
+    // html += '<div class="panel panel-default">';
+    // html += '<div class="panel-heading">players</div>';
+    html += '<ul class="list-group">';
     
     if ( player ) {
-        players_html += player_to_html( player );        
+        html += player_to_html( player );        
         if ( player.allies && player.allies.length > 0 ) {
             for ( var i = 0 ; i < player.allies.length ; i++ ) {
-                players_html += player_to_html( player.allies[ i ] );  
+                html += player_to_html( player.allies[ i ] );  
             }
         }
         if ( player.enemies && player.enemies.length > 0 ) {
             for ( var i = 0 ; i < player.enemies.length ; i++ ) {
-                players_html += player_to_html( player.enemies[ i ] );  
+                html += player_to_html( player.enemies[ i ] );  
             }
         }
     }
     
-    players_html += '</ul>';
-    players_html += '</div>';
+    html += '</ul>';
+    // html += '</div>';
+    // html += '</div>';
 
-    return players_html;
+    return html;
+}
+
+function html_button_restart( disabled ) {
+    var html = '';
+    html += '<button';
+    html += ' class="btn btn-success pull-right"';
+    html += ' onclick="initialize_game();"';
+    if ( disabled ) {
+        html += ' disabled="true"';
+    }
+    html += ' title="restart game">';
+    html += 'restart';
+    html += '</button>';
+    return html;
+}
+
+function html_button_play( disabled ) {
+    var html = '';
+    html += '<button';
+    html += ' class="btn btn-success"';
+    html += ' onclick="play_cards();"';
+    if ( disabled ) {
+        html += ' disabled="true"';
+    }
+    html += ' title="play cards">';
+    html += 'play';
+    html += '</button>';
+    return html;
 }
 
 // //////////////////////////////////////////////////
 // display
 
+var max_played_cards = 5;
+
 function display_board() {
     if ( _board ) {
-        $( '#board_container' ).html( board_to_html( _board, _player ) );
+        $( '#board_container' ).html( html_board( _board, _player ) );
     } 
-}
-
-function display_player() {
-    if ( _player ) {
-        // $( '#player_container' ).html( player_to_html( _player ) );
-        if ( _player.active ) {
-            $( '#button_container' ).html( '<button id="initialize" class="btn btn-success pull-right">initialize</button>' );
-            $( '#initialize' ).on( 'click', function() { initialize_game() } );
-        }
-    }
 }
 
 function display_players() {
     if ( _player ) {
-        $( '#players_container' ).html( players_to_html( _player ) );
+        $( '#players_container' ).html( html_players( _player ) );
     } 
 }
 
@@ -313,7 +345,7 @@ function display_cards() {
                 cards_html += '<span class="icon" title="action: ' + card + '"></span>';
                 cards_html += '</button>';    
             }
-            for ( var i = card_positions.length ; i < 5 ; i++ ) {
+            for ( var i = card_positions.length ; i < max_played_cards ; i++ ) {
                 var card_position = card_positions[ i ];
                 var card = cards[ card_position ];
                 var played = ( card_positions.indexOf( card_position ) != -1 );
@@ -324,14 +356,8 @@ function display_cards() {
                 cards_html += '<span class="icon" title="action: ?"></span>';
                 cards_html += '</button>';    
             }
-            if ( cards.length > 0 ) {
-                cards_html += '<button';
-                cards_html += ' class="btn btn-success pull-right"';
-                cards_html += ' onclick="play_cards();"';
-                cards_html += ' title="validate cards">';
-                cards_html += 'ok';
-                cards_html += '</button>';
-            } 
+            cards_html += html_button_play( ( card_positions.length <= 0 ) );
+            cards_html += html_button_restart( !_player.active );
             $( '#played_cards_container' ).html( cards_html );
         }
         {
@@ -347,6 +373,9 @@ function display_cards() {
                         cards_html += ' disabled="true"';
                     }
                     else {
+                        if ( max_played_cards <= card_positions.length ) {
+                            cards_html += ' disabled="true"';
+                        }
                         cards_html += ' class="card btn btn-primary action_' + card + '"';
                         cards_html += ' onclick="play_card(' + card_position + ');"';
                     }
@@ -360,16 +389,20 @@ function display_cards() {
     }
     else {
         $( '#played_cards_container' ).html( '' );
-        $( '#cards_container' ).html( 'waiting your turn... =)' );    
+        if ( _player.winner === true ) {
+            $( '#cards_container' ).html( '<div class="alert alert-success" role="alert">you win! =)</div>' );
+        }
+        else if ( _player.winner === false ) {
+            $( '#cards_container' ).html( '<div class="alert alert-warning" role="alert">you loose! =(</div>' );
+        }
+        else {
+            $( '#cards_container' ).html( '<div class="alert alert-info" role="alert">wait your turn! =)</div>' );
+        }  
     } 
 }
 
 function update_display() {
-    // $("#state_container").html( JSON.stringify( state, null, 4 ) );
-    // $("#metadata_container").html( JSON.stringify( metadata, null, 4 ) );
-    
     display_board();
-    display_player();
     display_players();
     display_cards();
 }
@@ -387,7 +420,7 @@ function log_debug( param1, param2 ) {
 }
 
 // //////////////////////////////////////////////////
-// game
+// onclick
 
 function initialize_game() {
     Plynd.call( 're_init', {}, on_event, on_error );
@@ -396,6 +429,9 @@ function initialize_game() {
 function play_cards() {
     Plynd.call( 'play_cards', { card_positions: _player.card_positions }, on_event, on_error );
 }
+
+// //////////////////////////////////////////////////
+// game
 
 Plynd.getGame( function( state, metadata ) {
     metadata && on_metadata( metadata );

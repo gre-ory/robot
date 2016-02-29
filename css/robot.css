@@ -1,11 +1,11 @@
 
 /* --- skeleton --- */
 
+/*
 .container {
     width: 800px;
     margin: 0 auto;
     padding: 0;
-    /* opacity: 0.2; */
 }
 
 .row {
@@ -42,6 +42,7 @@
     margin: 0;
     padding: 0;
 }
+*/
 
 /*
 
@@ -88,48 +89,48 @@
 
 /* --- board --- */
 
-#board {
-    margin: 20px auto;
-    padding: 0px;
+.board {
+    /* margin: 20px auto; */
+    /* padding: 0px; */
     /* width: 800px; */
-    border-collapse: collapse;    
+    /* border-collapse: collapse; */    
 }
 
-#board td {
+.board .cell {
     width: 40px;
     height: 40px;
     border: 1px solid #407F7F;
     background-color: #669999;
 }
 
-#board td[data-start] {
+.board .cell[data-start] {
     background-color: #407F7F;    
 }
 
-#board td[data-step],
-#board td[data-end] {
+.board .cell[data-step],
+.board .cell[data-end] {
     background-color: #88CC88;    
 }
 
-#board td[data-border],
-#board td[data-hole] {
+.board .cell[data-border],
+.board .cell[data-hole] {
     border: 1px solid #003333;
     background-color: #003333;    
 }
 
-#board td[data-north] {
+.board .cell[data-north] {
     border-top: 2px solid #804515;
 }
 
-#board td[data-east] {
+.board .cell[data-east] {
     border-right: 2px solid #804515;
 }
 
-#board td[data-south] {
+.board .cell[data-south] {
     border-bottom: 2px solid #804515;
 }
 
-#board td[data-west] {
+.board .cell[data-west] {
     border-left: 2px solid #804515;
 }
 
@@ -240,6 +241,7 @@ fieldset {
 
 .card {
     height: 60px;
+    width: 45px;
     margin: 5px;
     box-shadow: 2px 2px 4px #eee;
 }

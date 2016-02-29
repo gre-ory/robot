@@ -10,6 +10,37 @@ var char_wall_v = '|';
 
 var _boards = {}; 
 
+_boards[ '12x12' ] = function() {
+    var board = '';
+    board += '                         ';
+    board += '+-+ + +-+ + + + + + + + +';
+    board += ' 0|     |              0 ';
+    board += '+ + + + + + + + + + + + +';
+    board += '     1|                  ';
+    board += '+ + + + + + + + + + + + +';
+    board += '     #                   ';
+    board += '+ + + + + + + + + + + + +';
+    board += '   #  |                  ';
+    board += '+ + + + + + + + + + + + +';
+    board += '|   |                    ';
+    board += '+ + + + + + + + + + + + +';
+    board += '                         ';
+    board += '+ + + + + + + + + + + + +';
+    board += '            |            ';
+    board += '+ + + + + + + + +-+ + + +';
+    board += '                         ';
+    board += '+ + + + + + + + + + + + +';
+    board += '              |          ';
+    board += '+ + + + + + + + + + + + +';
+    board += '      |                  ';
+    board += '+ + + + + + + + +-+ + + +';
+    board += '                         ';
+    board += '+ + + + + + + + + + + + +';
+    board += ' 0                     0 ';
+    board += '+ + + +-+ + + +-+ + + + +';
+    return board;
+}; 
+
 _boards[ '5x5' ] = function() {
     var board = '';
     board += '           ';
@@ -571,7 +602,7 @@ function get_current_player( metadata ) {
     return metadata.players[ metadata.ownPlayerID ];
 }
 
-function compute_winner_ids( state ) {
+function compute_winner_ids( metadata, state ) {
     var winner_ids = null;
     for ( var player_id in state.players ) {
         var player = state.players[ player_id ];
@@ -587,11 +618,15 @@ function compute_winner_ids( state ) {
     return winner_ids; 
 }
 
-function compute_eliminated_ids( state ) {
+function compute_eliminated_ids( metadata, state ) {
     var eliminated_ids = null;
     for ( var player_id in state.players ) {
         var player = state.players[ player_id ];
         if ( player.alive === true ) {
+            continue;
+        }
+        var player_status = metadata.players[ player_id ].status;
+        if ( player_status == 'eliminated' ) {
             continue;
         }
         if ( !eliminated_ids ) {
@@ -671,11 +706,11 @@ Plynd.ServerFunctions.play_cards = function( request, success, error ) {
             state = apply_cards( metadata, state, board, player, request.card_positions );
             
             var event = { endTurn: true, players: state.players };
-            var winnerID = compute_winner_ids( state );
+            var winnerID = compute_winner_ids( metadata, state );
             if ( winnerID ) {
                 event.winnerID = winnerID;    
             }
-            var eliminatedID = compute_eliminated_ids( state );
+            var eliminatedID = compute_eliminated_ids( metadata, state );
             if ( eliminatedID ) {
                 event.eliminatedID = eliminatedID;    
             }

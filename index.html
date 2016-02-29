@@ -14,17 +14,24 @@
     <body>
         <div class="container-fluid">
             <div class="row">
-                <div id="button_container" class="col-md-12"></div>
+                <div id="header_container" class="col-xs-12 col-sm-12 col-md-12 col-lg-12"></div>
             </div>
             <div class="row">
-                <div id="board_container" class="col-md-8"></div>
-                <div id="players_container" class="col-md-4"></div>
-            </div>
-            <div class="row">
-                <div id="played_cards_container" class="col-md-12"></div>
-            </div>
-            <div class="row">
-                <div id="cards_container" class="col-md-12"></div>
+                <div id="board_container" class="col-xs-8 col-sm-8 col-md-8 col-lg-8"></div>
+                <div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">players</div>
+                        <div id="players_container"></div>
+                    </div>
+                    <div class="panel panel-default">
+                        <div class="panel-heading">cards</div>
+                        <div id="played_cards_container"></div>
+                    </div>
+                    <div class="panel panel-default">
+                        <div class="panel-heading">hand</div>
+                        <div id="cards_container"></div>
+                    </div>
+                </div>
             </div>
         </div>
     </body>
