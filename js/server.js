@@ -184,6 +184,16 @@ function get_board( metadata, state ) {
     return board;
 }
 
+function get_cell( board, x, y ) {
+    if ( y < 0 || board.length <= y ) {
+        return null;
+    }
+    if ( x < 0 || board[ y ].length <= x ) {
+        return null;
+    }
+    return board[ y ][ x ];
+}
+
 // //////////////////////////////////////////////////
 // card
 
@@ -377,7 +387,28 @@ function pause( metadata, state, board, state_player ) {
     return state_player; 
 }
 
+// //////////////////////////////////////////////////
+// live
+
+var live_max_points = 10;
+
+function damage( metadata, state, board, state_player ) {
+    state_player.live -= 1;
+    if ( state_player.live <= 0 ) {
+        return die( metadata, state, board, state_player );    
+    }
+    return state_player;
+}
+
 function repair( metadata, state, board, state_player ) {
+    if ( state_player.live < live_max_points ) {
+        state_player.live += 1;
+    }
+    return state_player; 
+}
+
+function die( metadata, state, board, state_player ) {
+    state_player.live = 0;
     return state_player; 
 }
 
@@ -385,29 +416,73 @@ function repair( metadata, state, board, state_player ) {
 // move
 
 function move_north( metadata, state, board, state_player ) {
-    // var current_cell = 
-    
-    state_player.y = state_player.y - 1;
-    log_debug( 'move_north', state_player.y );
-    return state_player;    
+
+    // wall
+    var current_cell = get_cell( board, state_player.x, state_player.y ); 
+    if ( current_cell.north ) {
+        return damage( metadata, state, board, state_player );            
+    }
+
+    var target_cell  = get_cell( board, state_player.x, state_player.y - 1 ); 
+    return move_to_cell(  metadata, state, board, state_player, target_cell );    
 }
 
 function move_east( metadata, state, board, state_player ) {
-    state_player.x = state_player.x + 1;
-    log_debug( 'move_east', state_player.x );
-    return state_player;    
+
+    // wall
+    var current_cell = get_cell( board, state_player.x, state_player.y ); 
+    if ( current_cell.east ) {
+        return damage( metadata, state, board, state_player );            
+    }
+
+    var target_cell  = get_cell( board, state_player.x + 1, state_player.y ); 
+    return move_to_cell(  metadata, state, board, state_player, target_cell );        
 }
 
 function move_south( metadata, state, board, state_player ) {
-    state_player.y = state_player.y + 1;
-    log_debug( 'move_south', state_player.y );
-    return state_player;    
+
+    // wall
+    var current_cell = get_cell( board, state_player.x, state_player.y ); 
+    if ( current_cell.south ) {
+        return damage( metadata, state, board, state_player );            
+    }
+
+    var target_cell  = get_cell( board, state_player.x, state_player.y + 1 );
+    return move_to_cell(  metadata, state, board, state_player, target_cell );        
 }
 
 function move_west( metadata, state, board, state_player ) {
-    state_player.x = state_player.x - 1;
-    log_debug( 'move_west', state_player.x );
-    return state_player;    
+
+    // wall
+    var current_cell = get_cell( board, state_player.x, state_player.y ); 
+    if ( current_cell.west ) {
+        return damage( metadata, state, board, state_player );            
+    }
+
+    var target_cell  = get_cell( board, state_player.x - 1, state_player.y );
+    return move_to_cell(  metadata, state, board, state_player, target_cell );
+}
+
+function move_to_cell( metadata, state, board, state_player, cell ) {
+    
+    // out of board
+    if ( !cell ) {
+        state_player.x = null;
+        state_player.y = null;
+        return die( metadata, state, board, state_player );
+    }
+    
+    // move  
+    state_player.x = cell.x;
+    state_player.y = cell.y;
+    log_debug( 'move', state_player );
+    
+    // hole
+    if ( cell.hole ) {
+        return die( metadata, state, board, state_player );            
+    }
+    
+    return state_player;        
 }
 
 // //////////////////////////////////////////////////
@@ -445,6 +520,7 @@ function build_start_state( metadata, start_cells ) {
         player.orientation = generate_first_orientation();
         player.active = ( plynd_player.status == 'has_turn' );
         player.cards = deal_player_cards( 10 );
+        player.live = live_max_points;
         // console.log( '[server] < build_start_state: player: ' + JSON.stringify( player ) );
         players[ plynd_player_id ] = player;
     }

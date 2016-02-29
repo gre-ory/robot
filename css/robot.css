@@ -185,11 +185,12 @@ fieldset {
 }
 */
 
-.robot .icon {
+.icon {
     font-family: 'Glyphicons Halflings';
 }
 
-.robot.orientation-1 .icon:before {
+.robot.orientation-1 .icon:before,
+.icon-player:before {
     content: "\e250";
 }
 

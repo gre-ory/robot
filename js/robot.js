@@ -233,28 +233,12 @@ function robot_to_html( player ) {
     return robot_html;
 }
 
-function player_to_html( player, badge ) {
-    /*
-    var player_html = '';
-    player_html += '<fieldset class="current"><legend>player</legend>'; 
-    player_html += '<div';
-    player_html += ' class="player ' + ( player.active ? 'active' : 'inactive' ) + '"';
-    player_html += ' style="background-color:' + player.color + ';;"';
-    player_html += ' title="' + player.id + ' - ' + player.name + '">';
-    player_html += player.name;
-    player_html += '</div>';
-    player_html += '</fieldset>';
-    return player_html;
-    */
+function player_to_html( player ) {
     var player_html = '';
     player_html += '<li class="list-group-item" title="' + player.id + ' - ' + player.name + '">';
-    if ( badge ) {
-        player_html += '<span class="badge">' + badge + '</span>';
-    }
+    player_html += '<span class="icon icon-player"  style="color:' + player.color + ';"></span>';
+    player_html += '<span class="badge">' + player.live + '</span>';
     player_html += player.name;
-    // player_html += ' class="player ' + ( player.active ? 'active' : 'inactive' ) + '"';
-    // player_html += ' style="background-color:' + player.color + ';"';
-    // player_html += ' title="' + player.id + ' - ' + player.name + '">';
     player_html += '</li>';
     return player_html    
 }
@@ -267,15 +251,15 @@ function players_to_html( player, allies, enemies ) {
     players_html += '<ul class="list-group">';
     
     if ( player ) {
-        players_html += player_to_html( player, 'on' );        
+        players_html += player_to_html( player );        
         if ( player.allies && player.allies.length > 0 ) {
             for ( var i = 0 ; i < player.allies.length ; i++ ) {
-                players_html += player_to_html( player.allies[ i ], 'ally' );  
+                players_html += player_to_html( player.allies[ i ] );  
             }
         }
         if ( player.enemies && player.enemies.length > 0 ) {
             for ( var i = 0 ; i < player.enemies.length ; i++ ) {
-                players_html += player_to_html( player.enemies[ i ], 'enemy' );  
+                players_html += player_to_html( player.enemies[ i ] );  
             }
         }
     }
