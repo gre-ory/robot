@@ -1,0 +1,533 @@
+
+// //////////////////////////////////////////////////
+// board
+
+var char_empty  = ' ';
+var char_corner = '+';
+var char_hole   = '#';
+var char_wall_h = '-'; 
+var char_wall_v = '|';
+
+var _boards = {}; 
+
+_boards[ '5x5' ] = function() {
+    var board = '';
+    board += '           ';
+    board += '+-+ + +-+ +';
+    board += ' 2|     |  ';
+    board += '+ + + + + +';
+    board += '     1|    ';
+    board += '+ + + + + +';
+    board += ' 0   #   0 ';
+    board += '+ + + + + +';
+    board += '   #  |    ';
+    board += '+ + + + + +';
+    board += '|0  |    0 ';
+    board += '+ + +-+ + +';
+    return board;
+};
+
+_boards[ '3x5' ] = function() {
+    var board = '';
+    board += '       ';
+    board += '+-+ +-+';
+    board += ' 2|   |';
+    board += '+ + + +';
+    board += '   # 0 ';
+    board += '+ + + +';
+    board += '   1|  ';
+    board += '+ + + +';
+    board += '   0   ';
+    board += '+ + + +';
+    board += '|0   0 ';
+    board += '+ +-+ +';
+    return board;
+};
+
+_boards[ '5x3' ] = function() {
+    var board = '';
+    board += '           ';
+    board += '+-+ + +-+ +';
+    board += ' 2|    0|0 ';
+    board += '+ + + + + +';
+    board += '     1|    ';
+    board += '+ + + + + +';
+    board += '|0     0   ';
+    board += '+ + +-+ + +';
+    return board;
+};
+
+function build_board_from_text( board_text ) {
+    
+    var items = board_text.split( '+' );
+    var nb_items = items.length;
+    var line_length = nb_items > 0 ? items[ 0 ].length : 0;
+    var nb_column = line_length > 0 ? Math.floor( ( line_length - 1 ) / 2 ) : 0;
+    var nb_row = ( nb_items > 0 ? Math.floor( ( nb_items - 1 ) / ( nb_column + 1 ) ) : 1 ) - 1;
+    
+    var cell_length = 2;
+    var line_length = ( nb_column * cell_length ) + 1;
+    var offset = line_length;
+    
+    var step_start = null;
+    var step_end = null;
+        
+    var board = [];
+    for( var y = 0 ; y < nb_row ; y++ ) {
+        var row = [];  
+        
+        for( var x = 0 ; x < nb_column ; x++ ) {
+            var cell = { x:x, y:y };
+            
+            var index_n = offset + ( 2 * line_length * y ) + ( cell_length * x );
+            var char_nw = board_text.charAt( index_n );
+            var char_n_ = board_text.charAt( index_n + 1 );
+            var char_ne = board_text.charAt( index_n + 2 );
+            
+            var index__ = offset + ( 2 * line_length * y ) + line_length + ( cell_length * x );
+            var char__w = board_text.charAt( index__ );
+            var char___ = board_text.charAt( index__ + 1 );
+            var char__e = board_text.charAt( index__ + 2 );
+            
+            var index_s = offset + ( 2 * line_length * y ) + 2 * line_length + ( cell_length * x );
+            var char_sw = board_text.charAt( index_s );
+            var char_s_ = board_text.charAt( index_s + 1 );
+            var char_se = board_text.charAt( index_s + 2 );
+            
+            var step___ = parseInt( char___ );
+            
+            if ( char_nw != char_corner ) {
+                console.log( '[server] error: cell( ' + x + ',' + y + ' ) has no corner on nw!' );
+                return null;
+            }                                
+            if ( char_ne != char_corner ) {
+                console.log( '[server] error: cell( ' + x + ',' + y + ' ) has no corner on ne!' );
+                return null;
+            }                                
+            if ( char_sw != char_corner ) {
+                console.log( '[server] error: cell( ' + x + ',' + y + ' ) has no corner on sw!' );
+                return null;
+            }                                
+            if ( char_se != char_corner ) {
+                console.log( '[server] error: cell( ' + x + ',' + y + ' ) has no corner on se!' );
+                return null;
+            }
+            
+            if ( char_n_ == char_wall_h ) {
+                cell.north = true;        
+            }                                
+            if ( char_s_ == char_wall_h ) {
+                cell.south = true;        
+            }                                
+            if ( char__w == char_wall_v ) {
+                cell.west = true;        
+            }                                
+            if ( char__e == char_wall_v ) {
+                cell.east = true;        
+            }
+                                            
+            if ( char___ == char_hole ) {
+                cell.hole = true;        
+            }
+            else if ( 0 <= step___ && step___ <= 9 ) {
+                cell.step = step___;
+                step_start = step_start ? step_start : Math.min( step_start, cell.step );
+                step_end = step_end ? step_end : Math.min( step_end, cell.step );
+            }
+        
+            row.push( cell );
+        }
+        
+        board.push( row );
+    }
+    
+    for ( var y = 0 ; y < board.length ; y++ ) {
+        var row = board[ y ];
+        for ( var x = 0 ; x < row.length ; x++ ) {
+            var cell = row[ x ];
+            if ( cell.step == step_start ) {
+                cell.start = true;
+                delete cell.step;    
+            }
+            else if ( cell.step == step_end ) {
+                cell.end = true;
+                delete cell.step;    
+            }
+            else if ( cell.step ) {
+                cell.step = cell.step - step_start;
+            } 
+        }
+    }
+    return board;        
+}
+
+function fetch_start_cells( board ) {
+    var start_cells = [];
+    for ( var y = 0 ; y < board.length ; y++ ) {
+        var row = board[ y ];
+        for ( var x = 0 ; x < row.length ; x++ ) {
+            var cell = row[ x ];
+            if ( !cell.start ) {
+                continue;
+            }
+            start_cells.push( cell );
+        }
+    }
+    return start_cells;        
+}
+
+function get_board( metadata, state ) {
+    var board_ids = Object.keys( _boards );
+    var board_id = board_ids[ 0 ];
+    var board_text = _boards[ board_id ]();
+    var board = build_board_from_text( board_text );
+    return board;
+}
+
+// //////////////////////////////////////////////////
+// card
+
+var card_move_3_forward = 'move_3_forward';
+var card_move_2_forward = 'move_2_forward';
+var card_move_forward   = 'move_forward';
+var card_move_backward  = 'move_backward';
+var card_slide_right    = 'slide_right';
+var card_slide_left     = 'slide_left';
+var card_turn_right     = 'turn_right';
+var card_turn_left      = 'turn_left';
+var card_uturn          = 'uturn';
+var card_pause          = 'pause';
+var card_repair         = 'repair';
+var all_cards = [ card_move_3_forward, card_move_2_forward, card_move_forward, card_move_backward
+                , card_slide_right, card_slide_left
+                , card_turn_right, card_turn_left, card_uturn
+                , card_pause, card_repair ];
+
+function deal_player_cards( nb ) {
+    var cards = [];
+    for ( var i = 0 ; i < nb ; i++ ) {
+        var card_index = Math.floor( Math.random() * all_cards.length );
+        cards.push( all_cards[ card_index ] );    
+    }
+    return cards;
+}
+
+function apply_cards( metadata, state, board, player, card_positions ) {
+    var state_player = state.players[ metadata.ownPlayerID ];
+    for ( var i = 0 ; i < card_positions.length ; i++ ) {
+        var card_position = card_positions[ i ];
+        var card = state_player.cards[ card_position ];
+        state = apply_card( metadata, state, board, player, card );
+    }
+    return state;
+}
+
+function apply_card( metadata, state, board, player, card ) {
+    var state_player = state.players[ metadata.ownPlayerID ];
+    log_debug( 'card', card );
+    if ( card == card_move_3_forward ) {
+        state_player = move_3_forward( metadata, state, board, state_player );
+    }
+    else if ( card == card_move_2_forward ) {
+        state_player = move_2_forward( metadata, state, board, state_player );
+    }
+    else if ( card == card_move_forward ) {
+        state_player = move_forward( metadata, state, board, state_player );
+    }
+    else if ( card == card_move_backward ) {
+        state_player = move_backward( metadata, state, board, state_player );
+    }
+    else if ( card == card_slide_right ) {
+        state_player = slide_right( metadata, state, board, state_player );
+    }
+    else if ( card == card_slide_left ) {
+        state_player = slide_left( metadata, state, board, state_player );
+    }
+    else if ( card == card_turn_right ) {
+        state_player = turn_right( metadata, state, board, state_player );
+    }
+    else if ( card == card_turn_left ) {
+        state_player = turn_left( metadata, state, board, state_player );
+    }
+    else if ( card == card_uturn ) {
+        state_player = uturn( metadata, state, board, state_player );
+    }
+    else if ( card == card_pause ) {
+        state_player = pause( metadata, state, board, state_player );
+    }
+    else if ( card == card_repair ) {
+        state_player = repair( metadata, state, board, state_player );
+    }
+    state.players[ metadata.ownPlayerID ] = state_player;
+    return state;     
+}
+
+// //////////////////////////////////////////////////
+// actions
+
+function move_3_forward( metadata, state, board, state_player ) {
+    state_player = move_forward( metadata, state, board, state_player );
+    state_player = move_forward( metadata, state, board, state_player );
+    state_player = move_forward( metadata, state, board, state_player );
+    return state_player;
+}
+
+function move_2_forward( metadata, state, board, state_player ) {
+    state_player = move_forward( metadata, state, board, state_player );
+    state_player = move_forward( metadata, state, board, state_player );
+    return state_player;
+}
+
+function move_forward( metadata, state, board, state_player ) {
+    if ( state_player.orientation == orientation_north ) {
+        log_debug( 'move_north', state_player.orientation );
+        state_player = move_north( metadata, state, board, state_player );
+    }
+    else if ( state_player.orientation == orientation_east ) {
+        log_debug( 'move_east', state_player.orientation );
+        state_player = move_east( metadata, state, board, state_player );
+    }
+    else if ( state_player.orientation == orientation_south ) {
+        log_debug( 'move_south', state_player.orientation );
+        state_player = move_south( metadata, state, board, state_player );
+    }
+    else if ( state_player.orientation == orientation_west ) {
+        log_debug( 'move_west', state_player.orientation );
+        state_player = move_west( metadata, state, board, state_player );
+    }
+    return state_player;
+}
+
+function move_backward( metadata, state, board, state_player ) {
+    if ( state_player.orientation == orientation_north ) {
+        log_debug( 'move_south', state_player.orientation );
+        state_player = move_south( metadata, state, board, state_player );
+    }
+    else if ( state_player.orientation == orientation_east ) {
+        log_debug( 'move_west', state_player.orientation );
+        state_player = move_west( metadata, state, board, state_player );
+    }
+    else if ( state_player.orientation == orientation_south ) {
+        log_debug( 'move_north', state_player.orientation );
+        state_player = move_north( metadata, state, board, state_player );
+    }
+    else if ( state_player.orientation == orientation_west ) {
+        log_debug( 'move_east', state_player.orientation );
+        state_player = move_east( metadata, state, board, state_player );
+    }
+    return state_player;    
+}
+
+function slide_right( metadata, state, board, state_player ) {
+    if ( state_player.orientation == orientation_north ) {
+        log_debug( 'move_east', state_player.orientation );
+        state_player = move_east( metadata, state, board, state_player );
+    }
+    else if ( state_player.orientation == orientation_east ) {
+        log_debug( 'move_south', state_player.orientation );
+        state_player = move_south( metadata, state, board, state_player );
+    }
+    else if ( state_player.orientation == orientation_south ) {
+        log_debug( 'move_west', state_player.orientation );
+        state_player = move_west( metadata, state, board, state_player );
+    }
+    else if ( state_player.orientation == orientation_west ) {
+        log_debug( 'move_north', state_player.orientation );
+        state_player = move_north( metadata, state, board, state_player );
+    }
+    return state_player;    
+}
+
+function slide_left( metadata, state, board, state_player ) {
+    if ( state_player.orientation == orientation_north ) {
+        log_debug( 'move_west', state_player.orientation );
+        state_player = move_west( metadata, state, board, state_player );
+    }
+    else if ( state_player.orientation == orientation_east ) {
+        log_debug( 'move_north', state_player.orientation );
+        state_player = move_north( metadata, state, board, state_player );
+    }
+    else if ( state_player.orientation == orientation_south ) {
+        log_debug( 'move_east', state_player.orientation );
+        state_player = move_east( metadata, state, board, state_player );
+    }
+    else if ( state_player.orientation == orientation_west ) {
+        log_debug( 'move_south', state_player.orientation );
+        state_player = move_south( metadata, state, board, state_player );
+    }
+    return state_player;    
+} 
+
+function turn_left( metadata, state, board, state_player ) {
+    state_player.orientation = sanitize_orientation( state_player.orientation + 3 );
+    return state_player; 
+}
+
+function turn_right( metadata, state, board, state_player ) {
+    state_player.orientation = sanitize_orientation( state_player.orientation + 1 );
+    return state_player; 
+}
+
+function uturn( metadata, state, board, state_player ) {
+    state_player.orientation = sanitize_orientation( state_player.orientation + 2 );
+    return state_player; 
+}
+
+function pause( metadata, state, board, state_player ) {
+    return state_player; 
+}
+
+function repair( metadata, state, board, state_player ) {
+    return state_player; 
+}
+
+// //////////////////////////////////////////////////
+// move
+
+function move_north( metadata, state, board, state_player ) {
+    // var current_cell = 
+    
+    state_player.y = state_player.y - 1;
+    log_debug( 'move_north', state_player.y );
+    return state_player;    
+}
+
+function move_east( metadata, state, board, state_player ) {
+    state_player.x = state_player.x + 1;
+    log_debug( 'move_east', state_player.x );
+    return state_player;    
+}
+
+function move_south( metadata, state, board, state_player ) {
+    state_player.y = state_player.y + 1;
+    log_debug( 'move_south', state_player.y );
+    return state_player;    
+}
+
+function move_west( metadata, state, board, state_player ) {
+    state_player.x = state_player.x - 1;
+    log_debug( 'move_west', state_player.x );
+    return state_player;    
+}
+
+// //////////////////////////////////////////////////
+// turn
+
+var orientation_north = 4;
+var orientation_east  = 1;
+var orientation_south = 2;
+var orientation_west  = 3;
+
+function sanitize_orientation( orientation ) {
+    orientation = orientation % 4;
+    return orientation > 0 ? orientation : 4;
+}
+
+function generate_first_orientation() {
+    return sanitize_orientation( Math.floor( Math.random() * 4 ) );    
+}
+
+// //////////////////////////////////////////////////
+// player
+
+function build_start_state( metadata, start_cells ) {
+    // console.log( '[server] < build_start_state: metadata: ' + JSON.stringify( metadata ) );
+    // console.log( '[server] < build_start_state: start_cells: ' + JSON.stringify( start_cells ) );
+    var players = {};
+    for ( var i = 0 ; i < metadata.orderOfPlay.length ; i++ ) {
+        var plynd_player_id = metadata.orderOfPlay[ i ];
+        var plynd_player = metadata.players[ plynd_player_id ];
+        var cell = start_cells[ i ];
+        var player = {};
+        player.id = plynd_player_id;
+        player.x = cell.x;
+        player.y = cell.y;
+        player.orientation = generate_first_orientation();
+        player.active = ( plynd_player.status == 'has_turn' );
+        player.cards = deal_player_cards( 10 );
+        // console.log( '[server] < build_start_state: player: ' + JSON.stringify( player ) );
+        players[ plynd_player_id ] = player;
+    }
+    // console.log( '[server] < build_start_state: players: ' + JSON.stringify( players ) );
+    return players;
+}
+
+function get_current_player( metadata ) {
+    return metadata.players[ metadata.ownPlayerID ];
+}
+
+// //////////////////////////////////////////////////
+// server methods
+
+function initialize_state( metadata, state ) {
+    state = state || {};
+    var board = get_board( metadata, state );
+    var start_cells = fetch_start_cells( board );
+    start_cells.sort( function() { return 0.5 - Math.random() } );
+    state.players = build_start_state( metadata, start_cells );
+    return state;    
+}
+
+Plynd.ServerFunctions.initializeState = function( request, success, error ) {
+    try {
+        Plynd.getGame( function( state, metadata ) {
+            state = initialize_state( metadata, state );
+            console.log( '[server] > initializeState: state: ' + JSON.stringify( state ) );
+            success( state );
+        } );
+    }
+    catch( err ) {
+        console.log( '[server] exception: ' + err );
+        console.log( err.stack );
+        return error( { code:403, data: "Internal error! ( " + err + " )" } );
+    }
+}
+
+Plynd.ServerFunctions.re_init = function( request, success, error ) {
+    try {
+        Plynd.getGame( function( state, metadata ) {
+            state = initialize_state( metadata, state );
+            console.log( '[server] > re_init: state: ' + JSON.stringify( state ) );
+            Plynd.updateGame( state, state, success, error );
+        } );
+    }
+    catch( err ) {
+        console.log( '[server] exception: ' + err );
+        console.log( err.stack );
+        return error( { code:403, data: "Internal error! ( " + err + " )" } );
+    }
+}
+
+Plynd.ServerFunctions.retrieve_board = function( request, success, error ) {
+    try {
+        // console.log( '[server] < retrieve_board: request: ' + JSON.stringify( request ) );
+        Plynd.getGame( function( state, metadata ) {
+            response = { board: get_board( metadata, state ) } ;
+            // console.log( '[server] > retrieve_board: response: ' + JSON.stringify( response ) );
+            success( response );
+        } );
+    }
+    catch( err ) {
+        console.log( '[server] retrieve_board: exception: ' + err );
+        console.log( err.stack );
+        return error( { code:403, data: "Internal error! ( " + err + " )" } );
+    }
+}
+
+Plynd.ServerFunctions.play_cards = function( request, success, error ) {
+    try {
+        console.log( '[server] > play_cards: request: ' + JSON.stringify( request ) );
+        Plynd.getGame( function( state, metadata ) {
+            var board = get_board( metadata, state );
+            var player = get_current_player( metadata, state );
+            state = apply_cards( metadata, state, board, player, request.card_positions );
+            console.log( '[server] > play_cards: state: ' + JSON.stringify( state ) );
+            Plynd.updateGame( { endTurn: true, players: state.players }, state, success, error );
+        } );
+    }
+    catch( err ) {
+        console.log( '[server] exception: ' + err );
+        console.log( err.stack );
+        return error( { code:403, data: "Internal error! ( " + err + " )" } );
+    }
+}

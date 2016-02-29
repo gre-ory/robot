@@ -1,0 +1,361 @@
+
+/* --- skeleton --- */
+
+.container {
+    width: 800px;
+    margin: 0 auto;
+    padding: 0;
+    /* opacity: 0.2; */
+}
+
+.row {
+    display: block;
+    width: 800px;
+    margin: 0;
+    padding: 0;
+}
+
+.row.header {
+}
+
+.row.footer {
+}
+
+.column {
+    display: inline-flex;    
+}
+
+.column.right {
+    width: 150px;
+    margin: 0;
+    padding: 0;
+}
+
+.column.main {
+    width: 300px;
+    margin: 0;
+    padding: 0;
+}
+
+.column.left {
+    width: 150px;
+    margin: 0;
+    padding: 0;
+}
+
+/*
+
+#button_container {
+    display: inline-flex;
+    width: 100%;
+    height: 20px;
+    margin: 0px;
+    padding: 0px;
+    background-color: #eee;
+}
+
+#board_container {
+    display: inline-flex;
+    width: 79%;
+    height: 600px;
+    margin: 0px;
+    padding: 0px;
+}
+
+#player_container {
+    display: inline-flex;
+    width: 20%;
+    height: 300px;
+    margin: 0px;
+    padding: 0px;
+}
+
+#players_container {
+    display: inline-flex;
+    width: 20%;
+    height: 300px;
+    margin: 0px;
+    padding: 0px;
+}
+
+*/
+
+/* --- global --- */
+
+.inactive {
+    /* opacity: 0.2; */
+}
+
+/* --- board --- */
+
+#board {
+    margin: 20px auto;
+    padding: 0px;
+    /* width: 800px; */
+    border-collapse: collapse;    
+}
+
+#board td {
+    width: 40px;
+    height: 40px;
+    border: 1px solid #407F7F;
+    background-color: #669999;
+}
+
+#board td[data-start] {
+    background-color: #407F7F;    
+}
+
+#board td[data-step],
+#board td[data-end] {
+    background-color: #88CC88;    
+}
+
+#board td[data-border],
+#board td[data-hole] {
+    border: 1px solid #003333;
+    background-color: #003333;    
+}
+
+#board td[data-north] {
+    border-top: 2px solid #804515;
+}
+
+#board td[data-east] {
+    border-right: 2px solid #804515;
+}
+
+#board td[data-south] {
+    border-bottom: 2px solid #804515;
+}
+
+#board td[data-west] {
+    border-left: 2px solid #804515;
+}
+
+/* --- player --- */
+
+fieldset {
+    border-radius: 5px;
+    box-shadow: 2px 2px 4px #eee;
+}
+
+.player {
+    display: inline-flex;
+    margin: 5px auto;
+    padding: 5px 10px;
+    border-radius: 5px;
+    box-shadow: 2px 2px 4px #eee;
+    font-size: 80%;
+    font-weight: bold;    
+}
+
+/* --- robot --- */
+
+.robot {
+    width: 30px;
+    height: 30px;
+    margin: 5px;
+    /*
+    width: 30px;
+    height: 30px;
+    border-radius: 5px;
+    background-color: #fff;
+    border: 1px solid #000;
+    box-shadow: 1px 1px 0px #000;
+    */
+}
+
+/*
+.robot.orientation-1 {
+    border-right: 10px solid #000;
+}
+
+.robot.orientation-2 {
+    border-bottom: 10px solid #000;
+}
+
+.robot.orientation-3 {
+    border-left: 10px solid #000;
+}
+
+.robot.orientation-4 {
+    border-top: 10px solid #000;
+}
+*/
+
+.robot .icon {
+    font-family: 'Glyphicons Halflings';
+}
+
+.robot.orientation-1 .icon:before {
+    content: "\e250";
+}
+
+.robot.orientation-2 .icon:before {
+    content: "\e252";
+}
+
+.robot.orientation-3 .icon:before {
+    content: "\e251";
+}
+
+.robot.orientation-4 .icon:before {
+    content: "\e253";
+}
+
+/* --- card --- */
+
+/*
+
+#cards {
+    text-align: center;
+}
+
+.card {
+    display: inline-flex;
+    margin: 5px;
+    font-size: 150%;
+    color: #999;
+    font-weight: bold;
+    width: 30px;
+    height: 40px;
+    border: 1px solid #eee;
+    background-color: #fff;
+    border-radius: 5px;
+    box-shadow: 1px 1px 0px #000;
+}
+
+.card span {
+    margin: 0 auto;
+}
+
+.card:hover {
+    background-color: #88CC88;    
+}
+
+*/
+
+.card {
+    height: 60px;
+    margin: 5px;
+    box-shadow: 2px 2px 4px #eee;
+}
+
+.card .icon {
+    font-family: 'Glyphicons Halflings';
+}
+
+/*
+var card_move_3_forward = 'move_3_forward';
+var card_move_2_forward = 'move_2_forward';
+var card_move_forward   = 'move_forward';
+var card_move_backward  = 'move_backward';
+var card_slide_right    = 'slide_right';
+var card_slide_left     = 'slide_left';
+var card_turn_right     = 'turn_right';
+var card_turn_left      = 'turn_left';
+var card_uturn          = 'uturn';
+var card_pause          = 'pause';
+var card_repair         = 'repair';
+*/
+
+.card .icon:before {
+    content: "\e101";
+}
+.action_move_3_forward .icon:before {
+    content: "\e093 3";
+}
+.action_move_2_forward .icon:before {
+    content: "\e093 2";
+}
+.action_move_forward .icon:before {
+    content: "\e093";
+}
+.action_move_backward .icon:before {
+    content: "\e094";
+}
+.action_slide_right .icon:before {
+    content: "\e092";
+}
+.action_slide_left .icon:before {
+    content: "\e091";
+}
+.action_turn_right .icon:before {
+    content: "\e095";
+}
+.action_turn_left .icon:before {
+    content: "\e095";
+}
+.action_turn_left {
+    -moz-transform: scale(-1, 1);
+    -webkit-transform: scale(-1, 1);
+    -o-transform: scale(-1, 1);
+    -ms-transform: scale(-1, 1);
+    transform: scale(-1, 1);
+}
+.action_uturn .icon:before {
+    content: "\e031";
+}
+.action_pause .icon:before {
+    content: "\e073";
+}
+.action_repair .icon:before {
+    content: "\e136";
+}
+.action_undefined .icon:before {
+    content: "\e014";
+} 
+
+/* --- debug --- */
+
+#state_container,
+#metadata_container {
+    margin: 20px;
+    padding: 20px;
+    border: 1px solid #aaa;
+    background-color: #ccc;
+}
+
+
+/*
+
+rouge  #FFAAAA #D46A6A #AA3939 #801515 #550000
+orange #FFD1AA #D49A6A #AA6C39 #804515 #552700
+bleu   #669999 #407F7F #226666 #0D4D4D #003333
+vert   #88CC88 #55AA55 #2D882D #116611 #004400   
+
+*/
+
+/*
+
+<div class="preview-box preview-box-1a bgcol bgcol-pri-0" title="AA3939" col-data="AA3939" id="ui-id-1" style="background: rgb(170, 57, 57);">
+	<div class="preview-var preview-var1 bgcol bgcol-pri-1" title="FFAAAA" col-data="FFAAAA" style="background: rgb(255, 170, 170);"></div>
+	<div class="preview-var preview-var2 bgcol bgcol-pri-2" title="D46A6A" col-data="D46A6A" style="background: rgb(212, 106, 106);"></div>
+	<div class="preview-var preview-var3 bgcol bgcol-pri-3" title="801515" col-data="801515" style="background: rgb(128, 21, 21);"></div>
+	<div class="preview-var preview-var4 bgcol bgcol-pri-4" title="550000" col-data="550000" style="background: rgb(85, 0, 0);"></div>
+</div>
+
+orange
+
+<div class="preview-box preview-box-1b bgcol bgcol-sec1-0" title="AA6C39" col-data="AA6C39" id="ui-id-3" style="background: rgb(170, 108, 57);">
+	<div class="preview-var preview-var1 bgcol bgcol-sec1-1" title="FFD1AA" col-data="FFD1AA" style="background: rgb(255, 209, 170);"></div>
+	<div class="preview-var preview-var2 bgcol bgcol-sec1-2" title="D49A6A" col-data="D49A6A" style="background: rgb(212, 154, 106);"></div>
+	<div class="preview-var preview-var3 bgcol bgcol-sec1-3" title="804515" col-data="804515" style="background: rgb(128, 69, 21);"></div>
+	<div class="preview-var preview-var4 bgcol bgcol-sec1-4" title="552700" col-data="552700" style="background: rgb(85, 39, 0);"></div>
+</div>
+<div class="preview-box preview-box-2a bgcol bgcol-sec2-0" title="226666" col-data="226666" id="ui-id-2" style="background: rgb(34, 102, 102);">
+	<div class="preview-var preview-var1 bgcol bgcol-sec2-1" title="669999" col-data="669999" style="background: rgb(102, 153, 153);"></div>
+	<div class="preview-var preview-var2 bgcol bgcol-sec2-2" title="407F7F" col-data="407F7F" style="background: rgb(64, 127, 127);"></div>
+	<div class="preview-var preview-var3 bgcol bgcol-sec2-3" title="0D4D4D" col-data="0D4D4D" style="background: rgb(13, 77, 77);"></div>
+	<div class="preview-var preview-var4 bgcol bgcol-sec2-4" title="003333" col-data="003333" style="background: rgb(0, 51, 51);"></div>
+</div>
+<div class="preview-box preview-box-2b bgcol bgcol-compl-0" title="2D882D" col-data="2D882D" id="ui-id-4" style="background: rgb(45, 136, 45);">
+	<div class="preview-var preview-var1 bgcol bgcol-compl-1" title="88CC88" col-data="88CC88" style="background: rgb(136, 204, 136);"></div>
+	<div class="preview-var preview-var2 bgcol bgcol-compl-2" title="55AA55" col-data="55AA55" style="background: rgb(85, 170, 85);"></div>
+	<div class="preview-var preview-var3 bgcol bgcol-compl-3" title="116611" col-data="116611" style="background: rgb(17, 102, 17);"></div>
+	<div class="preview-var preview-var4 bgcol bgcol-compl-4" title="004400" col-data="004400" style="background: rgb(0, 68, 0);"></div>
+</div>
+    
+ */
+
