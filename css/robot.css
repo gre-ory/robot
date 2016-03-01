@@ -190,8 +190,11 @@ fieldset {
     font-family: 'Glyphicons Halflings';
 }
 
-.robot.orientation-1 .icon:before,
 .icon-player:before {
+    content: "\e008  ";
+}
+
+.robot.orientation-1 .icon:before {
     content: "\e250";
 }
 
