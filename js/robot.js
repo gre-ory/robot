@@ -245,13 +245,15 @@ function html_board() {
 }
 
 function robot_to_html( player ) {
-    var robot_html = '';
-    robot_html += '<div';
-    robot_html += ' class="robot btn btn-default btn-xs orientation-' + ( player.orientation || '' ) + ' ' +  ( player.active ? 'active' : 'inactive' ) + '"';
-    robot_html += ' title="robot: ' + player.name + '">';
-    robot_html += '<span class="icon" title="robot: ' + player.name + '" style="color:' + player.color + ';"></span>';
-    robot_html += '</div>'; 
-    return robot_html;
+    var html = '';
+    html += '<div';
+    html += ' class="robot orientation-' + ( player.orientation || '' ) + ' ' +  ( player.active ? 'active' : 'inactive' ) + '"';
+    html += ' title="robot: ' + player.name + '">';
+    html += '<div class="robot_content">';
+    html += '<span class="icon" title="robot: ' + player.name + '" style="color:' + player.color + ';"></span>';
+    html += '</div>'; 
+    html += '</div>'; 
+    return html;
 }
 
 function player_to_html( player ) {
@@ -267,7 +269,7 @@ function player_to_html( player ) {
 function html_players( player ) {
     var html = '';
     
-    html += '<div class="panel panel-default">';
+    html += '<div class="panel panel-default panel-players">';
     html += '<div class="panel-heading">players</div>';
     html += '<ul class="list-group">';
     
@@ -298,42 +300,46 @@ function html_cards( player ) {
         var card_positions = player.card_positions || [];
         var cards = player.cards || [];
         {
-            html += '<div class="panel panel-default">';
+            html += '<div class="panel panel-default panel-cards">';
             html += '<div class="panel-heading">cards</div>';
             for ( var i = 0 ; i < card_positions.length ; i++ ) {
                 var card_position = card_positions[ i ];
                 var card = cards[ card_position ];
                 var played = ( card_positions.indexOf( card_position ) != -1 );
-                html += '<button';
-                html += ' class="card btn btn-success action_' + card + '"';
+                html += '<div';
+                html += ' class="card btn btn-info action_' + card + '"';
                 html += ' onclick="unplay_card(' + card_position + ');"';
                 html += ' title="action: ' + card + '">';
+                html += '<div class="card_content">';    
                 html += '<span class="icon" title="action: ' + card + '"></span>';
-                html += '</button>';    
+                html += '</div>';    
+                html += '</div>';    
             }
             for ( var i = card_positions.length ; i < max_played_cards ; i++ ) {
                 var card_position = card_positions[ i ];
                 var card = cards[ card_position ];
                 var played = ( card_positions.indexOf( card_position ) != -1 );
-                html += '<button';
+                html += '<div';
                 html += ' class="card btn btn-default action_undefined"';
                 html += ' disabled="true"';
                 html += ' title="action: ?">';
+                html += '<div class="card_content">';    
                 html += '<span class="icon" title="action: ?"></span>';
-                html += '</button>';    
+                html += '</div>';    
+                html += '</div>';    
             }
             html += html_button_play( ( card_positions.length <= 0 ) );
             html += html_button_restart( !_player.active );
             html += '</div>';
         }
         {
-            html += '<div class="panel panel-default">';
+            html += '<div class="panel panel-default panel-cards">';
             html += '<div class="panel-heading">hand</div>';
             for ( var i = 0 ; i < cards.length ; i++ ) {
                 var card_position = i;
                 var card = cards[ card_position ];
                 var played = ( card_positions.indexOf( card_position ) != -1 );
-                html += '<button';
+                html += '<div';
                 if ( played ) {
                     html += ' class="card btn btn-default action_' + card + '"';
                     html += ' disabled="true"';
@@ -346,8 +352,10 @@ function html_cards( player ) {
                     html += ' onclick="play_card(' + card_position + ');"';
                 }
                 html += ' title="action: ' + card + '">';
+                html += '<div class="card_content">';    
                 html += '<span class="icon" title="action: ' + card + '"></span>';
-                html += '</button>';    
+                html += '</div>';    
+                html += '</div>';    
             }
             html += '</div>';
         }
