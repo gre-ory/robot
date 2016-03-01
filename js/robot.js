@@ -157,29 +157,39 @@ function build_current_player() {
 
 function html_board() {
     var html = '';
-    var html_border_cell = '<div class="cell col-xs-1 col-sm-1 col-md-1 col-lg-1" data-border></div>';
+    var html_border_cell = '<div class="cell" data-border><div class="cell_content"></div></div>';
+    // var html_border_cell = null;
+    var html_north_border_cell = html_border_cell ? '<div class="cell" data-border data-south><div class="cell_content"></div></div>' : null;
+    var html_south_border_cell = html_border_cell ? '<div class="cell" data-border data-north><div class="cell_content"></div></div>' : null;
+    var html_west_border_cell = html_border_cell ? '<div class="cell" data-border data-east><div class="cell_content"></div></div>' : null;
+    var html_east_border_cell = html_border_cell ? '<div class="cell" data-border data-west><div class="cell_content"></div></div>' : null;
     if ( _board ) {
         html += '<div class="board container-fluid">';
         for ( var y = 0 ; y < _board.length ; y++ ) {
             var row = _board[ y ];
+            var nb_column = row.length + ( html_border_cell ? 2 : 0 );
             
-            if ( y == 0 ) {
-                html += '<div class="row">';
+            if ( html_border_cell && ( y == 0 ) ) {
+                html += '<div class="row columns-' + nb_column + '">';
                 html += html_border_cell;
                 for ( var x = 0 ; x < row.length ; x++ ) {
-                    html += html_border_cell;
+                    var cell = row[ x ];
+                    html += cell.north ? html_north_border_cell : html_border_cell;
                 }
                 html += html_border_cell;
                 html += '</div>';
             }
             
-            html += '<div class="row">';
-            html += html_border_cell;
+            html += '<div class="row columns-' + nb_column + '">';
+            if ( html_border_cell ) {
+                var cell = row[ 0 ];
+                html += cell.west ? html_west_border_cell : html_border_cell;
+            }
             for ( var x = 0 ; x < row.length ; x++ ) {
                 var cell = row[ x ];
                 var player = find_player_on_cell( cell );
                 
-                html += '<div class="cell col-xs-1 col-sm-1 col-md-1 col-lg-1" data-x="' + cell.x + '" data-y="' + cell.y + '"';
+                html += '<div class="cell" data-x="' + cell.x + '" data-y="' + cell.y + '"';
                 if ( cell.north ) { 
                     html += ' data-north';
                 }
@@ -205,32 +215,32 @@ function html_board() {
                     html += ' data-step="' + cell.step + '"';
                 }
                 html += '>';
+                html += '<div class="cell_content">';
                 if ( player ) {
                     html += robot_to_html( player );     
                 }
-                else {
-                    html += '&nbsp;';     
-                }
                 html += '</div>';
+                html += '</div>';
+            }
+            if ( html_border_cell ) {
+                var cell = row[ row.length - 1 ];
+                html += cell.east ? html_east_border_cell : html_border_cell;
             } 
-            html += html_border_cell;
             html += '</div>';
             
-            if ( y == ( _board.length - 1 ) ) {
-                html += '<div class="row">';
-                html += html_border_cell;
+            if ( html_border_cell && ( y == ( _board.length - 1 ) ) ) {
+                html += '<div class="row columns-' + nb_column + '">';
+                html += html_border_cell || '';
                 for ( var x = 0 ; x < row.length ; x++ ) {
-                    html += html_border_cell;
+                    var cell = row[ x ];
+                    html += cell.south ? html_south_border_cell : html_border_cell;
                 }
-                html += html_border_cell;
+                html += html_border_cell || '';
                 html += '</div>';
             }
         }
         html += '</div>';
-    } /*
-    else {
-        html += '<div class="alert alert-danger" role="alert">error while loading the board!</div>';
-    } */
+    }
     return html;
 }
 
