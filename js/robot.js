@@ -360,10 +360,10 @@ function html_cards( player ) {
             html += '</div>';
         }
     }
-    else if ( _player.winner === true ) {
+    else if ( player && player.winner === true ) {
         html += '<div class="alert alert-success" role="alert">you win! =)</div>';
     }
-    else if ( _player.winner === false ) {
+    else if ( player && player.winner === false ) {
         html += '<div class="alert alert-warning" role="alert">you loose! =(</div>';
     }
     else {

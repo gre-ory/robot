@@ -60,7 +60,7 @@
     margin-left: 20%;
     background: #fff;
     border: 1px solid #333; 
-    border-radius: 50%;
+    border-radius: 20%;
     box-shadow: 2px 2px 4px #333;    
 }
 
@@ -68,8 +68,8 @@
     position: absolute;
     top: 20%;
     left: 20%;
-    bottom: 0;
-    right: 0;
+	bottom: 0;
+	right: 0;
 }
 
 /* --- step --- */
@@ -151,20 +151,79 @@ fieldset {
     content: "\e008  ";
 }
 
+.robot .icon:before {
+    content: "\e250";
+    vertical-align: text-top;
+}
 .robot.orientation-1 .icon:before {
     content: "\e250";
 }
-
 .robot.orientation-2 .icon:before {
     content: "\e252";
 }
-
 .robot.orientation-3 .icon:before {
     content: "\e251";
 }
-
 .robot.orientation-4 .icon:before {
     content: "\e253";
+}
+
+/* ...px - 768px */
+
+.robot .icon:before {
+    font-size: 80%;
+}
+.robot.orientation-1 .icon:before {
+    padding-left: 20%;
+}
+.robot.orientation-2 .icon:before {
+    padding-left: 20%;
+}
+.robot.orientation-3 .icon:before {
+    padding-left: 15%;
+}
+.robot.orientation-4 .icon:before {
+    padding-left: 20%;
+}
+
+/* 768px - 992px */
+
+@media (min-width: 768px) {
+    .robot .icon:before {
+        font-size: 100%;
+    }
+    .robot.orientation-1 .icon:before {
+        padding-left: 20%;
+    }
+    .robot.orientation-2 .icon:before {
+        padding-left: 20%;
+    }
+    .robot.orientation-3 .icon:before {
+        padding-left: 15%;
+    }
+    .robot.orientation-4 .icon:before {
+        padding-left: 20%;
+    }
+}
+
+/* 992px - ... */
+
+@media (min-width: 992px) {
+    .robot .icon:before {
+        font-size: 140%;
+    }
+    .robot.orientation-1 .icon:before {
+        padding-left: 15%;
+    }
+    .robot.orientation-2 .icon:before {
+        padding-left: 15%;
+    }
+    .robot.orientation-3 .icon:before {
+        padding-left: 10%;
+    }
+    .robot.orientation-4 .icon:before {
+        padding-left: 15%;
+    }
 }
 
 /* --- card --- */
@@ -280,16 +339,31 @@ var card_repair         = 'repair';
     content: "\e014";
 } 
 
-/* --- debug --- */
+/* --- responsive --- */
 
-#state_container,
-#metadata_container {
-    margin: 20px;
-    padding: 20px;
-    border: 1px solid #aaa;
-    background-color: #ccc;
+/*
+.card .icon {
+    font-size: 70%;
 }
 
+@media (min-width: 768px) {
+    .card .icon {
+        font-size: 80%;
+    }
+}
+
+@media (min-width: 992px) {
+    .card .icon {
+        font-size: 90%;
+    }
+}
+
+@media (min-width: 1200px) {
+    .card .icon {
+        font-size: 100%;
+    }
+}
+*/
 
 /*
 
