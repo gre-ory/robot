@@ -296,7 +296,13 @@ function html_players( player ) {
 function html_cards( player ) {
     var html = '';
     
-    if ( player && player.active ) {
+    if ( player && player.winner === true ) {
+        html += '<div class="alert alert-success" role="alert">you win! =)</div>';
+    }
+    else if ( player && player.winner === false ) {
+        html += '<div class="alert alert-warning" role="alert">you loose! =(</div>';
+    }
+    else if ( player ) {
         var card_positions = player.card_positions || [];
         var cards = player.cards || [];
         {
@@ -309,6 +315,9 @@ function html_cards( player ) {
                 html += '<div';
                 html += ' class="card btn btn-info action_' + card + '"';
                 html += ' onclick="unplay_card(' + card_position + ');"';
+                if ( !player.active ) {
+                    html += ' disabled="true"';
+                }
                 html += ' title="action: ' + card + '">';
                 html += '<div class="card_content">';    
                 html += '<span class="icon" title="action: ' + card + '"></span>';
@@ -328,8 +337,13 @@ function html_cards( player ) {
                 html += '</div>';    
                 html += '</div>';    
             }
-            html += html_button_play( ( card_positions.length <= 0 ) );
-            html += html_button_restart( !_player.active );
+            if ( player.active ) {
+                html += html_button_play( ( card_positions.length < 5 ) );
+                // html += html_button_restart( !_player.active );
+            }
+            else {
+                html += '<div class="alert alert-info" role="alert">wait your turn! =)</div>';
+            }
             html += '</div>';
         }
         {
@@ -345,7 +359,7 @@ function html_cards( player ) {
                     html += ' disabled="true"';
                 }
                 else {
-                    if ( max_played_cards <= card_positions.length ) {
+                    if ( max_played_cards <= card_positions.length || !player.active ) {
                         html += ' disabled="true"';
                     }
                     html += ' class="card btn btn-primary action_' + card + '"';
@@ -359,12 +373,6 @@ function html_cards( player ) {
             }
             html += '</div>';
         }
-    }
-    else if ( player && player.winner === true ) {
-        html += '<div class="alert alert-success" role="alert">you win! =)</div>';
-    }
-    else if ( player && player.winner === false ) {
-        html += '<div class="alert alert-warning" role="alert">you loose! =(</div>';
     }
     else {
         html += '<div class="alert alert-info" role="alert">wait your turn! =)</div>';

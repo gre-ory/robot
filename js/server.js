@@ -273,10 +273,18 @@ function deal_player_cards( nb ) {
 
 function save_cards( metadata, state, board, player, card_positions ) {
     var state_player = state.players[ metadata.ownPlayerID ];
+    // validate number of card
+    if ( card_positions.length != max_cards ) {
+        throw 'player ' + metadata.ownPlayerID + ' have to play ' + max_cards + ' cards!';
+    }
     for ( var i = 0 ; i < card_positions.length ; i++ ) {
         var card_position = card_positions[ i ];
+        // validate card position
+        if ( ( card_position < 0 ) || ( state_player.cards.length <= card_position ) ) {
+            throw 'invalid card position!';
+        }
+        // validate card 
         var card = state_player.cards[ card_position ];
-        // TODO validate card position
     }
     state_player.card_positions = card_positions;
     return state;
@@ -784,9 +792,12 @@ Plynd.ServerFunctions.retrieve_board = function( request, success, error ) {
 }
 
 Plynd.ServerFunctions.play_cards = function( request, success, error ) {
-    try {
-        // console.log( '[server] > play_cards: request: ' + JSON.stringify( request ) );
-        Plynd.getGame( function( state, metadata ) {
+    
+    // console.log( '[server] > play_cards: request: ' + JSON.stringify( request ) );
+    
+    Plynd.getGame( function( state, metadata ) {
+        try {
+        
             var board = get_board( metadata, state );
             var player = get_current_player( metadata, state );
             console.log( '[server] > save_cards: player: ' + JSON.stringify( player ) );
@@ -796,7 +807,7 @@ Plynd.ServerFunctions.play_cards = function( request, success, error ) {
             
             state = save_cards( metadata, state, board, player, request.card_positions );
             console.log( '[server] > save_cards: cards: ' + JSON.stringify( request.card_positions ) );
-
+    
             var event = { endTurn: true };
             
             if ( everyone_has_played( metadata, state ) ) {
@@ -828,11 +839,13 @@ Plynd.ServerFunctions.play_cards = function( request, success, error ) {
             // console.log( '[server] > play_cards: event: ' + JSON.stringify( event ) );
             
             Plynd.updateGame( event, state, success, error );
-        } );
-    }
-    catch( err ) {
-        console.log( '[server] exception: ' + err );
-        console.log( err.stack );
-        return error( { code:403, data: "Internal error! ( " + err + " )" } );
-    }
+            
+        }
+        catch( err ) {
+            console.log( '[server] exception: ' + err );
+            console.log( err.stack );
+            return error( { code:403, data: "Internal error! ( " + err + " )" } );
+        }
+    } );
+    
 }
