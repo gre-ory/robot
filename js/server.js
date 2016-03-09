@@ -245,6 +245,7 @@ function get_state_player_on_cell( state, cell ) {
 // //////////////////////////////////////////////////
 // card
 
+var max_cards           = 5; 
 var card_move_3_forward = 'move_3_forward';
 var card_move_2_forward = 'move_2_forward';
 var card_move_forward   = 'move_forward';
@@ -306,18 +307,41 @@ function apply_all_cards( metadata, state, board ) {
     if ( !state.players ) {
         return state; // no player    
     }
-    for ( var player_id in state.players ) {
-        var state_player = state.players[ player_id ];
-        // TODO validate status of player
-        if ( !state_player ) {
-            continue; // no state for player
+    for ( var round = 0 ; round < max_cards ; round++ ) {
+        var cards_to_play = [];
+        for ( var player_id in state.players ) {
+            var state_player = state.players[ player_id ];
+            // TODO validate status of player
+            if ( !state_player ) {
+                continue; // no state for player
+            }
+            if ( !state_player.card_positions ) {
+                continue; // no card for player
+            }
+            if ( state_player.card_positions.length <= round ) {
+                continue; // no more card for player
+            }
+            var card_position = state_player.card_positions[ round ];
+            var card = state_player.cards[ card_position ];
+            cards_to_play.push( { state_player: state_player, card_position: card_position, card: card } );
         }
-        if ( !state_player.card_positions ) {
-            continue; // no card for player
+        
+        if ( cards_to_play.length == 0 ) {
+            console.log( '[server] round ' + round + ': no card to play!' );
+            break;
         }
-        // TODO better implementation
-        console.log( '[server] player ' + player_id + ' playing...' );
-        state = apply_cards(  metadata, state, board, state_player, state_player.card_positions );
+        
+        // shuffle
+        cards_to_play.sort( function() { return 0.5 - Math.random() } );
+        
+        for ( var i = 0 ; i < cards_to_play.length ; i++ ) {
+            var card_to_play = cards_to_play[ i ];
+            var state_player = card_to_play.state_player;
+            var card_position = card_to_play.card_position;
+            var card = card_to_play.card;
+            console.log( '[server] round ' + round + ': about to play card #' + card_position + ' ' + card + ' for player ' + state_player.id );
+            state = apply_card( metadata, state, board, state_player, card );
+        }    
     }
     return state;
 }
