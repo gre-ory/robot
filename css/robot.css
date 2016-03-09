@@ -45,29 +45,11 @@
 	margin-top: 100%;
 }
 
-.cell .cell_content {
+.cell .cell_content,
+.robot .robot_content {
 	position:  absolute;
 	top: 0;
 	left: 0;
-	bottom: 0;
-	right: 0;
-}
-
-.robot {
-    width: 60%;
-    height: 60%;
-    margin-top: 20%;
-    margin-left: 20%;
-    background: #fff;
-    border: 1px solid #333; 
-    border-radius: 20%;
-    box-shadow: 2px 2px 4px #333;    
-}
-
-.robot .robot_content {
-    position: absolute;
-    top: 20%;
-    left: 20%;
 	bottom: 0;
 	right: 0;
 }
@@ -141,7 +123,7 @@ fieldset {
     font-weight: bold;    
 }
 
-/* --- robot --- */
+/* --- icon --- */
 
 .icon {
     font-family: 'Glyphicons Halflings';
@@ -153,7 +135,6 @@ fieldset {
 
 .robot .icon:before {
     content: "\e250";
-    vertical-align: text-top;
 }
 .robot.orientation-1 .icon:before {
     content: "\e250";
@@ -168,41 +149,41 @@ fieldset {
     content: "\e253";
 }
 
+/* --- robot --- */
+
+.robot {
+    width: 60%;
+    height: 60%;
+    margin-top: 20%;
+    margin-left: 20%;
+    background: #fff;
+    border: 1px solid #333; 
+    border-radius: 20%;
+    box-shadow: 2px 2px 4px #333;    
+}
+
+.robot .icon {
+    display: inline-block;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    padding-top: 20%;
+}
+
 /* ...px - 768px */
 
 .robot .icon:before {
-    font-size: 80%;
-}
-.robot.orientation-1 .icon:before {
-    padding-left: 20%;
-}
-.robot.orientation-2 .icon:before {
-    padding-left: 20%;
-}
-.robot.orientation-3 .icon:before {
-    padding-left: 15%;
-}
-.robot.orientation-4 .icon:before {
-    padding-left: 20%;
+    font-size: 100%;
 }
 
 /* 768px - 992px */
 
 @media (min-width: 768px) {
     .robot .icon:before {
-        font-size: 100%;
+        font-size: 120%;
     }
-    .robot.orientation-1 .icon:before {
-        padding-left: 20%;
-    }
-    .robot.orientation-2 .icon:before {
-        padding-left: 20%;
-    }
-    .robot.orientation-3 .icon:before {
-        padding-left: 15%;
-    }
-    .robot.orientation-4 .icon:before {
-        padding-left: 20%;
+    .robot .icon {
+        padding-top: 30%;
     }
 }
 
@@ -211,18 +192,6 @@ fieldset {
 @media (min-width: 992px) {
     .robot .icon:before {
         font-size: 140%;
-    }
-    .robot.orientation-1 .icon:before {
-        padding-left: 15%;
-    }
-    .robot.orientation-2 .icon:before {
-        padding-left: 15%;
-    }
-    .robot.orientation-3 .icon:before {
-        padding-left: 10%;
-    }
-    .robot.orientation-4 .icon:before {
-        padding-left: 15%;
     }
 }
 

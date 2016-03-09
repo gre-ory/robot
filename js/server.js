@@ -270,6 +270,30 @@ function deal_player_cards( nb ) {
     return cards;
 }
 
+/*
+function save_cards( metadata, state, board, player, card_positions ) {
+    var state_player = state.players[ metadata.ownPlayerID ];
+    for ( var i = 0 ; i < card_positions.length ; i++ ) {
+        var card_position = card_positions[ i ];
+        var card = state_player.cards[ card_position ];
+        // TODO validate card position
+    }
+    state_player.card_positions = card_positions;
+    return state;
+}
+
+function everyone_has_played( metadata, state ) {
+    if ( state.players ) {
+        for ( var player_id in state.players ) {
+            var state_player = state.players[ player_id ];
+            if ( state_player && state_player.card_positions ) {
+                continue;
+            }
+        }
+    }
+}
+*/
+
 function apply_cards( metadata, state, board, player, card_positions ) {
     var state_player = state.players[ metadata.ownPlayerID ];
     for ( var i = 0 ; i < card_positions.length ; i++ ) {
@@ -703,17 +727,34 @@ Plynd.ServerFunctions.play_cards = function( request, success, error ) {
         Plynd.getGame( function( state, metadata ) {
             var board = get_board( metadata, state );
             var player = get_current_player( metadata, state );
+            // state = save_cards( metadata, state, board, player, request.card_positions );
             state = apply_cards( metadata, state, board, player, request.card_positions );
+
+            var event = { endTurn: true };
             
-            var event = { endTurn: true, players: state.players };
-            var winnerID = compute_winner_ids( metadata, state );
-            if ( winnerID ) {
-                event.winnerID = winnerID;    
+            /*
+            if ( everyone_has_played( metadata, state ) ) {
+                
+                // trigger end of turn
+                state = apply_all_cards( metadata, state, board, player, request.card_positions );
+                
+                // compute winner                
+                var winnerID = compute_winner_ids( metadata, state );
+                if ( winnerID ) {
+                    event.winnerID = winnerID;    
+                }
+                
+                // compute eliminated
+                var eliminatedID = compute_eliminated_ids( metadata, state );
+                if ( eliminatedID ) {
+                    event.eliminatedID = eliminatedID;    
+                }
             }
-            var eliminatedID = compute_eliminated_ids( metadata, state );
-            if ( eliminatedID ) {
-                event.eliminatedID = eliminatedID;    
-            }
+            */
+            
+            // save players           
+            event.players = state.players;
+            
             console.log( '[server] > play_cards: event: ' + JSON.stringify( event ) );
             
             Plynd.updateGame( event, state, success, error );
