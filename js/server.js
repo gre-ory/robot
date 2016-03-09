@@ -216,14 +216,14 @@ function get_board( metadata, state ) {
 }
 
 function get_cell( board, x, y ) {
-    if ( y < 0 || board.length <= y ) {
+    if ( y < 0 || !board || board.length <= y ) {
         return null;
     }
     var row = board[ y ];
-    if ( x < 0 || row.length <= x ) {
+    if ( x < 0 || !row || row.length <= x ) {
         return null;
     }
-    return board[ y ][ x ];
+    return row[ x ];
 } 
 
 function player_is_on_cell( player, cell ) {
@@ -270,7 +270,6 @@ function deal_player_cards( nb ) {
     return cards;
 }
 
-/*
 function save_cards( metadata, state, board, player, card_positions ) {
     var state_player = state.players[ metadata.ownPlayerID ];
     for ( var i = 0 ; i < card_positions.length ; i++ ) {
@@ -283,30 +282,57 @@ function save_cards( metadata, state, board, player, card_positions ) {
 }
 
 function everyone_has_played( metadata, state ) {
-    if ( state.players ) {
-        for ( var player_id in state.players ) {
-            var state_player = state.players[ player_id ];
-            if ( state_player && state_player.card_positions ) {
-                continue;
-            }
+    if ( !state.players ) {
+        console.log( '[server] no player.' );
+        return false;
+    }
+    for ( var player_id in state.players ) {
+        var state_player = state.players[ player_id ];
+        // TODO validate status of player
+        if ( !state_player ) {
+            console.log( '[server] missing state for player ' + player_id );
+            return false;
+        }
+        if ( !state_player.card_positions ) {
+            console.log( '[server] at least waiting for player ' + player_id );
+            return false;
         }
     }
+    console.log( '[server] all players have played.' );
+    return true;
 }
-*/
 
-function apply_cards( metadata, state, board, player, card_positions ) {
-    var state_player = state.players[ metadata.ownPlayerID ];
-    for ( var i = 0 ; i < card_positions.length ; i++ ) {
-        var card_position = card_positions[ i ];
-        var card = state_player.cards[ card_position ];
-        state = apply_card( metadata, state, board, player, card );
+function apply_all_cards( metadata, state, board ) {
+    if ( !state.players ) {
+        return state; // no player    
+    }
+    for ( var player_id in state.players ) {
+        var state_player = state.players[ player_id ];
+        // TODO validate status of player
+        if ( !state_player ) {
+            continue; // no state for player
+        }
+        if ( !state_player.card_positions ) {
+            continue; // no card for player
+        }
+        // TODO better implementation
+        console.log( '[server] player ' + player_id + ' playing...' );
+        state = apply_cards(  metadata, state, board, state_player, state_player.card_positions );
     }
     return state;
 }
 
-function apply_card( metadata, state, board, player, card ) {
-    var state_player = state.players[ metadata.ownPlayerID ];
-    log_debug( 'card', card );
+function apply_cards( metadata, state, board, state_player, card_positions ) {
+    for ( var i = 0 ; i < card_positions.length ; i++ ) {
+        var card_position = card_positions[ i ];
+        var card = state_player.cards[ card_position ];
+        state = apply_card( metadata, state, board, state_player, card );
+    }
+    return state;
+}
+
+function apply_card( metadata, state, board, state_player, card ) {
+    console.log( '[server] card', card );
     if ( card == card_move_3_forward ) {
         state_player = move_3_forward( metadata, state, board, state_player );
     }
@@ -613,6 +639,7 @@ function build_start_state( metadata, start_cells ) {
         player.orientation = generate_first_orientation();
         player.active = ( plynd_player.status == 'has_turn' );
         player.cards = deal_player_cards( 10 );
+        player.card_positions = null;
         player.alive = true;
         player.live = live_max_points;
         // console.log( '[server] < build_start_state: player: ' + JSON.stringify( player ) );
@@ -620,6 +647,17 @@ function build_start_state( metadata, start_cells ) {
     }
     // console.log( '[server] < build_start_state: players: ' + JSON.stringify( players ) );
     return players;
+}
+
+function build_turn_state( metadata, state ) {
+    for ( var player_id in state.players ) {
+        var player = state.players[ player_id ];
+        console.log( '[server] player ' + player_id + ': ' + player.live + ' points.' );
+        player.cards = deal_player_cards( player.live );
+        player.card_positions = null;
+        state.players[ player_id ] = player;
+    }
+    return state;
 }
 
 function get_current_player( metadata ) {
@@ -723,20 +761,26 @@ Plynd.ServerFunctions.retrieve_board = function( request, success, error ) {
 
 Plynd.ServerFunctions.play_cards = function( request, success, error ) {
     try {
-        console.log( '[server] > play_cards: request: ' + JSON.stringify( request ) );
+        // console.log( '[server] > play_cards: request: ' + JSON.stringify( request ) );
         Plynd.getGame( function( state, metadata ) {
             var board = get_board( metadata, state );
             var player = get_current_player( metadata, state );
-            // state = save_cards( metadata, state, board, player, request.card_positions );
-            state = apply_cards( metadata, state, board, player, request.card_positions );
+            console.log( '[server] > save_cards: player: ' + JSON.stringify( player ) );
+            
+            // apply directly
+            // state = apply_cards( metadata, state, board, player, request.card_positions );
+            
+            state = save_cards( metadata, state, board, player, request.card_positions );
+            console.log( '[server] > save_cards: cards: ' + JSON.stringify( request.card_positions ) );
 
             var event = { endTurn: true };
             
-            /*
             if ( everyone_has_played( metadata, state ) ) {
                 
+                console.log( '[server] > triggre end of turn...' );
+                
                 // trigger end of turn
-                state = apply_all_cards( metadata, state, board, player, request.card_positions );
+                state = apply_all_cards( metadata, state, board );
                 
                 // compute winner                
                 var winnerID = compute_winner_ids( metadata, state );
@@ -749,13 +793,15 @@ Plynd.ServerFunctions.play_cards = function( request, success, error ) {
                 if ( eliminatedID ) {
                     event.eliminatedID = eliminatedID;    
                 }
+                
+                // reshuffle cards
+                state = build_turn_state( metadata, state );
             }
-            */
             
             // save players           
             event.players = state.players;
             
-            console.log( '[server] > play_cards: event: ' + JSON.stringify( event ) );
+            // console.log( '[server] > play_cards: event: ' + JSON.stringify( event ) );
             
             Plynd.updateGame( event, state, success, error );
         } );
