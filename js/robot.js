@@ -156,21 +156,29 @@ function build_current_player() {
 // html
 
 function html_board() {
+
+    var first_row = _board.length > 0 ? _board[0] : null;
+    
+    var nb_row    = ( _board ? _board.length : 0 ) + 2;
+    var nb_column = ( first_row ? first_row.length : 0 ) + 2;
+    
+    console.log( 'board: ' + nb_row + ' x ' + nb_column );
+    
     var html = '';
-    var html_border_cell = '<div class="cell" data-border><div class="cell_content"></div></div>';
-    // var html_border_cell = null;
-    var html_north_border_cell = html_border_cell ? '<div class="cell" data-border data-south><div class="cell_content"></div></div>' : null;
-    var html_south_border_cell = html_border_cell ? '<div class="cell" data-border data-north><div class="cell_content"></div></div>' : null;
-    var html_west_border_cell = html_border_cell ? '<div class="cell" data-border data-east><div class="cell_content"></div></div>' : null;
-    var html_east_border_cell = html_border_cell ? '<div class="cell" data-border data-west><div class="cell_content"></div></div>' : null;
+    
+    var html_border_cell = '<div class="board-cell" data-border><div class="floor walls"></div></div>';
+    var html_north_border_cell = '<div class="board-cell" data-border data-south><div class="floor walls"></div></div>';
+    var html_south_border_cell = '<div class="board-cell" data-border data-north><div class="floor walls"></div></div>';
+    var html_west_border_cell = '<div class="board-cell" data-border data-east><div class="floor walls"></div></div>';
+    var html_east_border_cell = '<div class="board-cell" data-border data-west><div class="floor walls"></div></div>';
+    
     if ( _board ) {
-        html += '<div class="board container-fluid">';
+        html += '<div class="board rows-' + nb_row + ' columns-' + nb_column + '">';
         for ( var y = 0 ; y < _board.length ; y++ ) {
             var row = _board[ y ];
-            var nb_column = row.length + ( html_border_cell ? 2 : 0 );
             
             if ( html_border_cell && ( y == 0 ) ) {
-                html += '<div class="row columns-' + nb_column + '">';
+                html += '<div class="board-row">'; 
                 html += html_border_cell;
                 for ( var x = 0 ; x < row.length ; x++ ) {
                     var cell = row[ x ];
@@ -180,7 +188,7 @@ function html_board() {
                 html += '</div>';
             }
             
-            html += '<div class="row columns-' + nb_column + '">';
+            html += '<div class="board-row">'; 
             if ( html_border_cell ) {
                 var cell = row[ 0 ];
                 html += cell.west ? html_west_border_cell : html_border_cell;
@@ -189,7 +197,7 @@ function html_board() {
                 var cell = row[ x ];
                 var player = find_player_on_cell( cell );
                 
-                html += '<div class="cell" data-x="' + cell.x + '" data-y="' + cell.y + '"';
+                html += '<div class="board-cell" data-x="' + cell.x + '" data-y="' + cell.y + '"';
                 if ( cell.north ) { 
                     html += ' data-north';
                 }
@@ -215,7 +223,7 @@ function html_board() {
                     html += ' data-step="' + cell.step + '"';
                 }
                 html += '>';
-                html += '<div class="cell_content">';
+                html += '<div class="floor walls">';
                 if ( player ) {
                     html += robot_to_html( player );     
                 }
@@ -229,7 +237,7 @@ function html_board() {
             html += '</div>';
             
             if ( html_border_cell && ( y == ( _board.length - 1 ) ) ) {
-                html += '<div class="row columns-' + nb_column + '">';
+                html += '<div class="board-row">'; 
                 html += html_border_cell || '';
                 for ( var x = 0 ; x < row.length ; x++ ) {
                     var cell = row[ x ];
@@ -247,11 +255,15 @@ function html_board() {
 function robot_to_html( player ) {
     var html = '';
     html += '<div';
-    html += ' class="robot orientation-' + ( player.orientation || '' ) + ' ' +  ( player.active ? 'active' : 'inactive' ) + '"';
+    html += ' class="robot ' +  ( player.active ? 'active' : 'inactive' ) + '"';
     html += ' title="robot: ' + player.name + '">';
-    html += '<div class="robot_content">';
-    html += '<span class="icon" title="robot: ' + player.name + '" style="color:' + player.color + ';"></span>';
-    html += '</div>'; 
+    // html += '<div class="robot_content">';
+    html += '<div';
+    html += ' class="orientation-' + ( player.orientation || '' ) + '"';
+    html += '  title="robot: ' + player.name + '"';
+    html += '  style="border-color: ' + player.color + '">';
+    html += ' </div>';
+    // html += '</div>'; 
     html += '</div>'; 
     return html;
 }
@@ -415,7 +427,11 @@ function html_button_play( disabled ) {
 var max_played_cards = 5;
 
 function display_board() {
-    $( '#board_container' ).html( html_board( _board, _player ) );
+    var element = $( '#board_container' );
+    var height = element.height();
+    var width = element.width();
+    console.log( 'board: ' + width + 'px x ' + height + 'px.' );
+    element.html( html_board( _board, _player ) );
 }
 
 function display_players() {
