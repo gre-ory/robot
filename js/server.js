@@ -14,29 +14,29 @@ _boards[ '12x12' ] = function() {
     var board = '';
     board += '                         ';
     board += '+-+ + +-+ + + + + + + + +';
-    board += ' 0|     |              0 ';
-    board += '+ + + + + + + + + + + + +';
-    board += '     1|                  ';
-    board += '+ + + + + + + + + + + + +';
-    board += '     #                   ';
+    board += '  |     |     |          ';
+    board += '+ + + + + + +-+-+-+ + + +';
+    board += '      |     |            ';
+    board += '+ + + + + + +-+ +-+-+-+-+';
+    board += '     # 0     0           ';
     board += '+ + + + + + + + + + + + +';
     board += '   #  |          # # # # ';
     board += '+ + + + + + + + + + + + +';
-    board += '|   |     |             |';
+    board += '|   |  0  |  0      |   |';
     board += '+ + + + +-+-+ + + + + + +';
-    board += '          |              ';
-    board += '+ + + + + + + + + + + + +';
+    board += '          |     |    #   ';
+    board += '+ + + + + + +-+-+ + +-+ +';
     board += '            |            ';
     board += '+ + + + + + + + +-+ + + +';
     board += '     #           # #     ';
     board += '+ + + + + + + + + + + + +';
-    board += '              |    #     ';
+    board += '       # #   #|    #     ';
     board += '+ + + + + + + + + + + + +';
-    board += '      |          # #     ';
+    board += '      |  #   #   # #     ';
     board += '+ + + + + + + + +-+ + + +';
-    board += '                         ';
+    board += '         #               ';
     board += '+ + + + + + + + + + + + +';
-    board += ' 0                     0 ';
+    board += '            #            ';
     board += '+ + + +-+ + + +-+ + + + +';
     return board;
 }; 
@@ -257,17 +257,63 @@ var card_turn_left      = 'turn_left';
 var card_uturn          = 'uturn';
 var card_pause          = 'pause';
 var card_repair         = 'repair';
-var all_cards = [ card_move_3_forward, card_move_2_forward, card_move_forward, card_move_backward
-                , card_slide_right, card_slide_left
-                , card_turn_right, card_turn_left, card_uturn
-                , card_pause, card_repair ];
 
-function deal_player_cards( nb ) {
+var weight_off = 0;
+var weight_0_move = 0;
+var weight_1_move = 3;
+var weight_2_moves = 2;
+var weight_3_moves = 1;
+
+var all_cards = [ 
+    { card: card_move_3_forward, weight: weight_3_moves, description: '#player moves 3 forward' },  
+    { card: card_move_2_forward, weight: weight_2_moves, description: '#player moves 2 forward' },   
+    { card: card_move_forward,   weight: weight_1_move,  description: '#player moves forward' },   
+    { card: card_move_backward,  weight: weight_1_move,  description: '#player moves backward' }, 
+    { card: card_slide_right,    weight: weight_3_moves, description: '#player slides right' },   
+    { card: card_slide_left,     weight: weight_3_moves, description: '#player slides left' }, 
+    { card: card_turn_right,     weight: weight_1_move,  description: '#player turns right' },   
+    { card: card_turn_left,      weight: weight_1_move,  description: '#player turns left' },   
+    { card: card_uturn,          weight: weight_2_moves, description: '#player uturns' },  
+    { card: card_pause,          weight: weight_0_move,  description: '#player pauses' }, 
+    { card: card_repair,         weight: weight_0_move,  description: '#player repairs it self' }
+];
+
+function deal_player_cards( nb, add_repair ) {
     var cards = [];
-    for ( var i = 0 ; i < nb ; i++ ) {
-        var card_index = Math.floor( Math.random() * all_cards.length );
-        cards.push( all_cards[ card_index ] );    
+    
+    // compute total weight
+    var total_weight = 0;
+    for ( var i = 0 ; i < all_cards.length ; i++ ) {
+        total_weight += all_cards[i].weight;
     }
+    // console.log( '[server] total_weight: ' + total_weight );
+    
+    for ( var i = 0 ; i < nb ; i++ ) {
+        var random_weight = Math.floor( Math.random() * total_weight );
+        // console.log( '[server] random_weight: ' + random_weight );
+        
+        // select card
+        var tmp_weight = 0;
+        for ( var card_index = 0 ; card_index < all_cards.length ; card_index++ ) {
+            tmp_weight += all_cards[card_index].weight;
+            // console.log( '[server] tmp_weight: ' + tmp_weight );
+            if ( random_weight < tmp_weight ) {
+                // console.log( '[server] card_index: ' + card_index );
+                break;
+            }
+        }
+        // var card_index = Math.floor( Math.random() * all_cards.length );
+        // console.log( '[server] card_index: ' + card_index );
+        var card = all_cards[card_index];
+        console.log( '[server] (+) card: ' + card.card + ', weight: ' + card.weight + ', description: ' + card.description );
+        cards.push( card.card );    
+    }
+    
+    if ( add_repair ) {
+        console.log( '[server] (+) card: ' + card_repair );
+        cards.push( card_repair );    
+    }
+    
     return cards;
 }
 
@@ -670,10 +716,10 @@ function build_start_state( metadata, start_cells ) {
         player.y = cell.y;
         player.orientation = generate_first_orientation();
         player.active = ( plynd_player.status == 'has_turn' );
-        player.cards = deal_player_cards( 10 );
+        player.live = live_max_points;
+        player.cards = deal_player_cards( player.live, ( player.live != live_max_points ) );
         player.card_positions = null;
         player.alive = true;
-        player.live = live_max_points;
         // console.log( '[server] < build_start_state: player: ' + JSON.stringify( player ) );
         players[ plynd_player_id ] = player;
     }
@@ -685,7 +731,7 @@ function build_turn_state( metadata, state ) {
     for ( var player_id in state.players ) {
         var player = state.players[ player_id ];
         console.log( '[server] player ' + player_id + ': ' + player.live + ' points.' );
-        player.cards = deal_player_cards( player.live );
+        player.cards = deal_player_cards( player.live, ( player.live != live_max_points ) );
         player.card_positions = null;
         state.players[ player_id ] = player;
     }

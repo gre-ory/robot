@@ -1,13 +1,11 @@
 
-/* --- board --- */
+/* --- --- */
 
-/*
-.board {
-    border: 6px solid #AA3939;
-    border-radius: 4px;
-    box-shadow: 4px 4px #eee;
+#board_container,
+#players_container,
+#cards_container  {
+    display: inline-block;
 }
-*/
 
 /* --- grid --- */
 
@@ -37,7 +35,8 @@
     display: inline-block;
     border: 6px solid #AA3939;
     border-radius: 4px;
-    box-shadow: 4px 4px #eee;
+    box-shadow: 0.2em 0.2em 0.2em rgba(0,0,0,0.5);
+    background: #333;
 }
 
 .board-row { 
@@ -58,12 +57,16 @@
 .board-cell {
     display: inline-block;
 	/* position: relative; */
+    box-shadow: 0.2em 0.2em 0.2em rgba(0,0,0,0.5);
+}
+
+.board-cell .floor {
     background-color: #669999;
 }
 
 .board-cell {
-    border-top: 1px solid #333;
-    border-left: 1px solid #333;
+    border-top: 1px solid transparent; /* #333; */
+    border-left: 1px solid transparent; /* #333; */
 }
 
 .board.columns-1  { width: calc(  1 * calc( 1px + 2.2em ) ); }
@@ -108,61 +111,6 @@
 .board.rows-19 { height: calc( 19 * calc( 1px + 2.2em ) ); }
 .board.rows-20 { height: calc( 20 * calc( 1px + 2.2em ) ); }
 
-/* --- walls --- */
-
-.board-cell[data-north] {
-    border-top: 1px solid #AA3939;
-}
-
-.board-cell[data-west] {
-    border-left: 1px solid #AA3939;
-}
-
-.walls { 
-    width: calc( 2.2em + 1px );
-    height: calc( 2.2em + 1px );
-    border: 3px solid transparent;
-    padding: calc( 0.3em - 1px );
-}
-
-.board-cell[data-north] .walls {
-    border-top: 2px solid #AA3939;
-}
-
-.board-cell[data-east] .walls {
-    border-right: 2px solid #AA3939;
-}
-
-.board-cell[data-south] .walls {
-    border-bottom: 2px solid #AA3939;
-}
-
-.board-cell[data-west] .walls {
-    border-left: 2px solid #AA3939;
-}
-
-/* --- square = ratio 1:1 --- */
-
-/*
-
-.cell:before,
-.robot:before {
-	content: "";
-	display: inline-block;
-	margin-top: 100%;
-}
-
-.cell .cell_content,
-.robot .robot_content {
-	position:  absolute;
-	top: 0;
-	left: 0;
-	bottom: 0;
-	right: 0;
-}
-
-*/
-
 /* --- step --- */
 
 .board-cell[data-start] .floor {
@@ -181,7 +129,49 @@
 
 .board-cell[data-border],
 .board-cell[data-hole] {
-    background-color: #333;
+    background-color: transparent;
+    box-shadow: none;
+    border-color: transparent;
+}
+
+.board-cell[data-border] .walls,
+.board-cell[data-hole] .walls {
+    background-color: transparent;
+    box-shadow: none;
+    border-color: transparent;
+}
+
+/* --- walls --- */
+
+.board-cell[data-north] {
+    border-top: 1px solid #AA3939;
+}
+
+.board-cell[data-west] {
+    border-left: 1px solid #AA3939;
+}
+
+.walls { 
+    width: 100%;
+    height: 100%;
+    border: 0.1em solid transparent;
+    padding: 0.4em;
+}
+
+.board-cell[data-north] .walls {
+    border-top: 0.1em solid #AA3939;
+}
+
+.board-cell[data-east] .walls {
+    border-right: 0.1em solid #AA3939;
+}
+
+.board-cell[data-south] .walls {
+    border-bottom: 0.1em solid #AA3939;
+}
+
+.board-cell[data-west] .walls {
+    border-left: 0.1em solid #AA3939;
 }
 
 /* --- player --- */
@@ -280,14 +270,31 @@ fieldset {
 /* --- robot --- */
 
 .robot {
-    /* width: 60%; */
-    /* height: 60%; */
-    /* margin-top: 20%; */
-    /* margin-left: 20%; */
+    /*
+    background-repeat: repeat-x;
+    border-color: #ccc;
+    */
+    
     background: #fff;
-    border: 1px solid #333; 
-    border-radius: 20%;
-    box-shadow: 2px 2px 4px #333;    
+    border: 0.1em solid #333;
+    border-radius: 50%;
+    box-shadow: 0.1em 0.1em 0 rgba(0,0,0,0.4);
+    background-image: linear-gradient(to bottom, #fff 0%, #e0e0e0 100%);
+    /* text-shadow: 0 1px 0 #fff; */
+    /*
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .15), 0 1px 1px rgba(0, 0, 0, .075); 
+        
+        font-size: 14px;
+    font-weight: normal;
+    line-height: 1.428571429;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: middle;
+    cursor: pointer;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    -webkit-user-select: none; 
+    */
 }
 
 .robot .icon {
