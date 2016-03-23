@@ -394,6 +394,7 @@ function apply_all_cards( metadata, state, board ) {
             var card_position = card_to_play.card_position;
             var card = card_to_play.card;
             console.log( '[server] round ' + round + ': about to play card #' + card_position + ' ' + card + ' for player ' + state_player.id );
+            state = history_add_card( metadata, state, '0', round, player_id, card );
             state = apply_card( metadata, state, board, state_player, card );
         }    
     }
@@ -452,7 +453,7 @@ function apply_card( metadata, state, board, state_player, card ) {
 // actions
 
 function move_3_forward( metadata, state, board, state_player ) {
-    console.log( '[server] player ' + state_player.id + ' moves 3 forward...' );
+    state = history_add_action( metadata, state, 'player ' + state_player.id + ' moves 3 forward...' );
     state_player = move_forward( metadata, state, board, state_player );
     state_player = move_forward( metadata, state, board, state_player );
     state_player = move_forward( metadata, state, board, state_player );
@@ -460,14 +461,14 @@ function move_3_forward( metadata, state, board, state_player ) {
 }
 
 function move_2_forward( metadata, state, board, state_player ) {
-    console.log( '[server] player ' + state_player.id + ' moves 2 forward...' );
+    state = history_add_action( metadata, state, 'player ' + state_player.id + ' moves 2 forward...' );
     state_player = move_forward( metadata, state, board, state_player );
     state_player = move_forward( metadata, state, board, state_player );
     return state_player;
 }
 
 function move_forward( metadata, state, board, state_player ) {
-    console.log( '[server] player ' + state_player.id + ' moves forward...' );
+    state = history_add_action( metadata, state, 'player ' + state_player.id + ' moves forward...' );
     if ( state_player.orientation == orientation_north ) {
         state_player = move_north( metadata, state, board, state_player );
     }
@@ -484,7 +485,7 @@ function move_forward( metadata, state, board, state_player ) {
 }
 
 function move_backward( metadata, state, board, state_player ) {
-    console.log( '[server] player ' + state_player.id + ' moves backward...' );
+    state = history_add_action( metadata, state, 'player ' + state_player.id + ' moves backward...' );
     if ( state_player.orientation == orientation_north ) {
         state_player = move_south( metadata, state, board, state_player );
     }
@@ -501,7 +502,7 @@ function move_backward( metadata, state, board, state_player ) {
 }
 
 function slide_right( metadata, state, board, state_player ) {
-    console.log( '[server] player ' + state_player.id + ' slides right...' );
+    state = history_add_action( metadata, state, 'player ' + state_player.id + ' slides right...' );
     if ( state_player.orientation == orientation_north ) {
         state_player = move_east( metadata, state, board, state_player );
     }
@@ -518,7 +519,7 @@ function slide_right( metadata, state, board, state_player ) {
 }
 
 function slide_left( metadata, state, board, state_player ) {
-    console.log( '[server] player ' + state_player.id + ' slides left...' );
+    state = history_add_action( metadata, state, 'player ' + state_player.id + ' slides left...' );
     if ( state_player.orientation == orientation_north ) {
         state_player = move_west( metadata, state, board, state_player );
     }
@@ -535,19 +536,19 @@ function slide_left( metadata, state, board, state_player ) {
 } 
 
 function turn_left( metadata, state, board, state_player ) {
-    console.log( '[server] player ' + state_player.id + ' turns left...' );
+    state = history_add_action( metadata, state, 'player ' + state_player.id + ' turns left...' );
     state_player.orientation = sanitize_orientation( state_player.orientation + 3 );
     return state_player; 
 }
 
 function turn_right( metadata, state, board, state_player ) {
-    console.log( '[server] player ' + state_player.id + ' turns right...' );
+    state = history_add_action( metadata, state, 'player ' + state_player.id + ' turns right...' );
     state_player.orientation = sanitize_orientation( state_player.orientation + 1 );
     return state_player; 
 }
 
 function uturn( metadata, state, board, state_player ) {
-    console.log( '[server] player ' + state_player.id + ' uturns...' );
+    state = history_add_action( metadata, state, 'player ' + state_player.id + ' uturns...' );
     state_player.orientation = sanitize_orientation( state_player.orientation + 2 );
     return state_player; 
 }
@@ -563,7 +564,7 @@ var live_max_points = 10;
 
 function damage( metadata, state, board, state_player ) {
     state_player.live -= 1;
-    console.log( '[server] player ' + state_player.id + ' damages itself: ' + state_player.live );
+    state = history_add_action( metadata, state, 'player ' + state_player.id + ' looses 1 point...' );
     if ( state_player.live <= 0 ) {
         return die( metadata, state, board, state_player );    
     }
@@ -573,7 +574,7 @@ function damage( metadata, state, board, state_player ) {
 function repair( metadata, state, board, state_player ) {
     if ( state_player.live < live_max_points ) {
         state_player.live += 1;
-        console.log( '[server] player ' + state_player.id + ' repairs itself: ' + state_player.live );
+        state = history_add_action( metadata, state, 'player ' + state_player.id + ' gains 1 point...' );
     }
     return state_player; 
 }
@@ -581,7 +582,7 @@ function repair( metadata, state, board, state_player ) {
 function die( metadata, state, board, state_player ) {
     state_player.alive = false;
     state_player.live = 0;
-    console.log( '[server] player ' + state_player.id + ' dies: ' + state_player.live );
+    state = history_add_action( metadata, state, 'player ' + state_player.id + ' dies...' );
     return state_player; 
 }
 
@@ -594,7 +595,7 @@ function move_north( metadata, state, board, state_player ) {
     // wall
     var current_cell = get_cell( board, state_player.x, state_player.y ); 
     if ( current_cell.north ) {
-        console.log( '[server] player ' + state_player.id + ' hits north wall.' );
+        state = history_add_action( metadata, state, 'player ' + state_player.id + ' hits north wall...' );
         return damage( metadata, state, board, state_player );            
     }
 
@@ -608,6 +609,7 @@ function move_east( metadata, state, board, state_player ) {
     // wall
     var current_cell = get_cell( board, state_player.x, state_player.y ); 
     if ( current_cell.east ) {
+        state = history_add_action( metadata, state, 'player ' + state_player.id + ' hits north wall...' );
         console.log( '[server] player ' + state_player.id + ' hits east wall.' );
         return damage( metadata, state, board, state_player );            
     }
@@ -780,6 +782,30 @@ function compute_eliminated_ids( metadata, state ) {
 }
 
 // //////////////////////////////////////////////////
+// history
+
+function history_init( metadata, state ) {
+    state.history = [];
+    return state;
+}
+
+function history_reset( metadata, state ) {
+    state.history = [];
+    return state;
+}
+
+function history_add_card( metadata, state, turn, phase, player_id, card ) {
+    var description = 'player ' + player_id + ' plays card ' + card;
+    state.history.push( { turn: turn, phase: phase, player: player_id, card: card, descriptions: [ description ] } );
+    return state;
+}
+
+function history_add_action( metadata, state, description ) {
+    state.history[state.history.length-1].descriptions.push(description);
+    return state;
+}
+
+// //////////////////////////////////////////////////
 // server methods
 
 function initialize_state( metadata, state ) {
@@ -788,6 +814,7 @@ function initialize_state( metadata, state ) {
     var start_cells = fetch_start_cells( board );
     start_cells.sort( function() { return 0.5 - Math.random() } );
     state.players = build_start_state( metadata, start_cells );
+    state.history = history_init( metadata, state );
     return state;    
 }
 
