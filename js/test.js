@@ -8,13 +8,18 @@ var _nb_success = 0;
 var _nb_total = 0;
 
 function start_test( msg ) {
+    test_report();
     console.log( ' ----- test: ' + msg );
+    _current_test = msg;
 }
 
 function test_report() {
     if ( is_not_null( _current_test ) && ( _nb_total > 0 ) ) {
-        console.log( ' ----- test: ' + _current_test + ': ' + int( _nb_success * 100 / ( _nb_total ) ) + '% ( ' + _nb_success + ' / ' + _nb_total + ' )' );
+        console.log( ' ----- test: ' + _current_test + ': ' + parseInt( _nb_success * 100 / ( _nb_total ) ) + '% ( ' + _nb_success + ' / ' + _nb_total + ' )' );
     }
+    _current_test = null;
+    _nb_success = 0;
+    _nb_total = 0;
 }
 
 function expect_test( msg, computed, throw_error ) {
@@ -247,5 +252,53 @@ random = new Random( 42 );
     expect_player_position(player, 0, 1, 'east', 7);
     player.move_backward();
     expect_player_position(player, null, null, null, 0);
-    
 }
+
+{
+    start_test( 'interaction' );
+    
+    var board = new Board();
+    board.load_from_id( 'test_board' );
+    
+    var player = new Player( 42 );
+    player.initialize( board.get_cell( 0, 0 ) );
+    expect_player_position(player, 0, 0, 'south', 10);
+
+    var player_2 = new Player( 2 );
+    player_2.initialize( board.get_cell( 1, 1 ) );
+    expect_player_position(player_2, 1, 1, 'north', 10);
+
+    var player_3 = new Player( 3 );
+    player_3.initialize( board.get_cell( 1, 2 ) );
+    expect_player_position(player_3, 1, 2, 'west', 10);
+
+    var player_4 = new Player( 4 );
+    player_4.initialize( board.get_cell( 2, 2 ) );
+    expect_player_position(player_4, 2, 2, 'west', 10);
+    
+    player.move_forward();
+    player.turn_left();
+    player.move_forward();
+    expect_player_position(player, 0, 1, 'east', 9);
+    expect_player_position(player_2, 1, 1, 'north', 9);
+    expect_player_position(player_3, 1, 2, 'west', 10);
+    expect_player_position(player_4, 2, 2, 'west', 10);
+    player.slide_right();
+    player.move_forward();
+    expect_player_position(player, 0, 2, 'east', 8);
+    expect_player_position(player_2, 1, 1, 'north', 9);
+    expect_player_position(player_3, 1, 2, 'west', 9);
+    expect_player_position(player_4, 2, 2, 'west', 9);
+    player.slide_left();
+    player.slide_left();
+    player.move_forward();
+    player.turn_right();
+    player.move_forward();
+    expect_player_position(player, 1, 1, 'south', 8);
+    expect_player_position(player_2, 1, 2, 'north', 9);
+    expect_player_position(player_3, null, null, null, 0);
+    expect_player_position(player_4, 2, 2, 'west', 9);
+
+}
+
+test_report();

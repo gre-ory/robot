@@ -18,6 +18,10 @@ function is_false( obj ) {
     return ( obj === false ) || ( obj === 0 );
 }
 
+function throw_error( msg ) {
+    throw msg;
+}
+
 // //////////////////////////////////////////////////
 // random
 
@@ -161,10 +165,10 @@ _boards[ 'test_board' ] = function() {
     board += '|      #|';
     board += '+ + + + +';
     board += '    |#   ';
-    board += '+ +-+-+ +';
-    board += '    |    ';
+    board += '+ + +-+ +';
+    board += '      |  ';
     board += '+-+ + + +';
-    board += '|       |';
+    board += '|  #    |';
     board += '+-+ + +-+';
     return board;
 };
@@ -262,6 +266,7 @@ function Cell( board, x, y ) {
     this.y = y;
     // private
     this._board = board;
+    this._player = null;
     // this._step
     // this._start
     // this._end
@@ -295,6 +300,22 @@ Cell.prototype.flush = function() {
     }
     out = ( out ? out + ' }' : '{}' );
     return out;
+}
+
+// player 
+
+Cell.prototype.unset_player = function() {
+    this._player = null;
+}
+
+Cell.prototype.set_player = function( player ) {
+    if ( is_not_null( player ) ) {
+        this._player = player;
+    }    
+}
+
+Cell.prototype.get_player = function() {
+    return this._player;    
 }
 
 // step
@@ -336,6 +357,22 @@ Cell.prototype.is_hole = function() {
 }
 
 // wall
+
+Cell.prototype.get_east_wall = function() {
+    return this._east;
+}
+
+Cell.prototype.get_south_wall = function() {
+    return this._south;
+}
+
+Cell.prototype.get_west_wall = function() {
+    return this._west;
+}
+
+Cell.prototype.get_north_wall = function() {
+    return this._north;
+}
 
 Cell.prototype.set_east_wall = function() {
     this._east.close();
@@ -440,20 +477,16 @@ Board.prototype.load_from_text = function build_board_from_text( board_text ) {
             var step___ = parseInt( char___ );
             
             if ( char_nw != char_corner ) {
-                console.log( '[error] cell( ' + x + ',' + y + ' ) has no corner on nw!' );
-                return null;
+                throw '[error] cell( ' + x + ',' + y + ' ) has no corner on nw!';
             }                                
             if ( char_ne != char_corner ) {
-                console.log( '[error] cell( ' + x + ',' + y + ' ) has no corner on ne!' );
-                return null;
+                throw '[error] cell( ' + x + ',' + y + ' ) has no corner on ne!';
             }                                
             if ( char_sw != char_corner ) {
-                console.log( '[error] cell( ' + x + ',' + y + ' ) has no corner on sw!' );
-                return null;
+                throw '[error] cell( ' + x + ',' + y + ' ) has no corner on sw!';
             }                                
             if ( char_se != char_corner ) {
-                console.log( '[error] cell( ' + x + ',' + y + ' ) has no corner on se!' );
-                return null;
+                throw '[error] cell( ' + x + ',' + y + ' ) has no corner on se!';
             }
             
             if ( char_n_ == char_wall_h ) {
@@ -539,79 +572,38 @@ Board.prototype.get_cell = function( x, y ) {
 // //////////////////////////////////////////////////
 // Card
 
-function Card( id, weight, fn ) {
+function Card( id, weight, play_fn ) {
     this.id = id;
     this.weight = weight;
-    this.fn = fn;
+    this.play_fn = play_fn;
 }
 
-Card.prototype.apply = function() {
-    console.log( '[card] playing card ' + this.id );
-    this.fn();
-}
-
-// actions
-
-function action_move_3_forward() {
-}
-
-function action_move_2_forward() {
-}
-
-function action_move_1_forward() {
-}
-
-function action_move_1_backward() {
-}
-
-function action_slide_right() {
-}
-
-function action_slide_left() {
-}
-
-function action_turn_right() {
-}
-
-function action_turn_left() {
-}
-
-function action_uturn() {
-}
-
-function action_4_shoot() {
-}
-
-function action_2_shoot() {
-}
-
-function action_1_shoot() {
-}
-
-function action_pause() {
-}
-
-function action_repair() {
+Card.prototype.play = function( state, player ) {
+    console.log( '[server] player ' + player.id + ' plays card ' + this.id + '...' );
+    if ( is_null( this.play_fn ) ) {
+        throw '[error] player ' + player.id + ': invalid card!'; 
+    }
+    this.play_fn.apply( player, state );
 } 
 
 // cards
 
-var card_repair_id = 're';
+var card_repair_id = 'r';
 var all_cards = [
-    new Card( '3f', 1, action_move_3_forward ),
-    new Card( '2f', 2, action_move_2_forward ),
-    new Card( '1f', 3, action_move_1_forward ),
-    new Card( '1b', 2, action_move_1_backward ),
-    new Card( 'sr', 1, action_slide_right ),
-    new Card( 'sl', 1, action_slide_left ),
-    new Card( 'tr', 2, action_turn_right ),
-    new Card( 'tl', 2, action_turn_left ),
-    new Card( 'ut', 1, action_uturn ),
-    new Card( '4s', 0, action_4_shoot ),
-    new Card( '2s', 0, action_2_shoot ),
-    new Card( '1s', 0, action_1_shoot ),
-    new Card( 'pa', 0, action_pause ),
-    new Card( card_repair_id, 0, action_repair )
+    new Card( 'f3', 1, Player.prototype.move_3_forward ),
+    new Card( 'f2', 2, Player.prototype.move_2_forward ),
+    new Card( 'f',  3, Player.prototype.move_forward ),
+    new Card( 'b',  2, Player.prototype.move_backward ),
+    new Card( 'sr', 1, Player.prototype.slide_right ),
+    new Card( 'sl', 1, Player.prototype.slide_left ),
+    new Card( 'r',  2, Player.prototype.turn_right ),
+    new Card( 'l',  2, Player.prototype.turn_left ),
+    new Card( 'u',  1, Player.prototype.uturn ),
+    new Card( 's4', 0, Player.prototype.shoot_4 ),
+    new Card( 's2', 0, Player.prototype.shoot_2 ),
+    new Card( 's',  0, Player.prototype.shoot ),
+    new Card( 'p',  0, Player.prototype.pause ),
+    new Card( 'r',  0, Player.prototype.repair )
 ];
 
 // deal
@@ -867,6 +859,9 @@ Player.prototype.gains_one_point = function() {
 // cell
 
 Player.prototype.unset_cell = function() {
+    if ( is_not_null( this._cell ) ) { 
+        this._cell.unset_player();
+    }
     this._cell = null;
     this.x = null;
     this.y = null;
@@ -874,7 +869,15 @@ Player.prototype.unset_cell = function() {
 }
 
 Player.prototype.set_cell = function( cell ) {
+    if ( is_null( cell ) ) {
+        this.unset_cell();
+        return;
+    }
+    if ( is_not_null( this._cell ) ) {
+        this._cell.unset_player();
+    }
     this._cell = cell;
+    this._cell.set_player( this );
     this.x = this._cell.x;
     this.y = this._cell.y;
 }
@@ -930,6 +933,21 @@ Player.prototype.damage = function( state ) {
         return;
     }
     this.die( state );
+}
+
+// actions
+
+Player.prototype.move_3_forward = function( state ) {
+    console.log( '[server] player ' + this.id + ' moves 3 forward...' );
+    this.move_forward( state );
+    this.move_forward( state );
+    this.move_forward( state );
+}
+
+Player.prototype.move_2_forward = function( state ) {
+    console.log( '[server] player ' + this.id + ' moves 2 forward...' );
+    this.move_forward( state );
+    this.move_forward( state );
 }
 
 Player.prototype.move_forward = function( state ) {
@@ -1011,92 +1029,89 @@ Player.prototype.uturn = function( state ) {
     this.orientation.rotate( 2 );
 }
 
+Player.prototype.shoot_4 = function( state ) {
+    console.log( '[server] player ' + this.id + ' shoots 4...' );
+}
+
+Player.prototype.shoot_2 = function( state ) {
+    console.log( '[server] player ' + this.id + ' shoots 2...' );
+}
+
+Player.prototype.shoot_1 = function( state ) {
+    console.log( '[server] player ' + this.id + ' shoots 1...' );
+}
+
 Player.prototype.pause = function( state ) {
     console.log( '[server] player ' + this.id + ' pauses...' );
 }
 
-// move
-
-Player.prototype.move_north = function( state ) {
-    console.log( '[server] player ' + this.id + ' moves north...' );
-    
-    // wall
-    var current_cell = this.get_cell(); 
-    if ( current_cell.has_north_wall() ) {
-        console.log( '[server] player ' + this.id + ' hits north wall...' );
-        return this.damage( state );
-    }
-
-    var target_cell = current_cell.get_north_cell(); 
-    return this.move_to_cell( state, target_cell );    
+Player.prototype.repair = function( state ) {
+    console.log( '[server] player ' + this.id + ' repairs itself...' );
 }
 
-Player.prototype.move_east = function( state ) {
-    console.log( '[server] player ' + this.id + ' moves east...' );
-    
-    // wall
-    var current_cell = this.get_cell(); 
-    if ( current_cell.has_east_wall() ) {
-        console.log( '[server] player ' + this.id + ' hits east wall...' );
-        return this.damage( state );
-    }
+// move
 
-    var target_cell = current_cell.get_east_cell(); 
-    return this.move_to_cell( state, target_cell );        
+Player.prototype.move_east = function( state ) {
+    if ( is_null( this._cell ) ) {
+        throw '[error] player ' + this.id + ': missing cell!';
+    }
+    console.log( '[server] player ' + this.id + ' moves east...' );
+    return this.move_to_cell( state, this._cell.get_east_wall(), this._cell.get_east_cell(), Player.prototype.move_east );
 }
 
 Player.prototype.move_south = function( state ) {
-    console.log( '[server] player ' + this.id + ' moves south...' );
-    
-    // wall
-    var current_cell = this.get_cell(); 
-    if ( current_cell.has_south_wall() ) {
-        console.log( '[server] player ' + this.id + ' hits south wall...' );
-        return this.damage( state );
+    if ( is_null( this._cell ) ) {
+        throw '[error] player ' + this.id + ': missing cell!';
     }
-
-    var target_cell = current_cell.get_south_cell(); 
-    return this.move_to_cell( state, target_cell );         
+    console.log( '[server] player ' + this.id + ' moves south...' );
+    return this.move_to_cell( state, this._cell.get_south_wall(), this._cell.get_south_cell(), Player.prototype.move_south );
 }
 
 Player.prototype.move_west = function( state ) {
-    console.log( '[server] player ' + this.id + ' moves west...' );
-    
-    // wall
-    var current_cell = this.get_cell(); 
-    if ( current_cell.has_west_wall() ) {
-        console.log( '[server] player ' + this.id + ' hits west wall...' );
-        return this.damage( state );
+    if ( is_null( this._cell ) ) {
+        throw '[error] player ' + this.id + ': missing cell!';
     }
-
-    var target_cell = current_cell.get_west_cell(); 
-    return this.move_to_cell( state, target_cell ); 
+    console.log( '[server] player ' + this.id + ' moves west...' );
+    return this.move_to_cell( state, this._cell.get_west_wall(), this._cell.get_west_cell(), Player.prototype.move_west );
 }
 
-Player.prototype.move_to_cell = function( state, cell ) {
+Player.prototype.move_north = function( state ) {
+    if ( is_null( this._cell ) ) {
+        throw '[error] player ' + this.id + ': missing cell!';
+    }
+    console.log( '[server] player ' + this.id + ' moves north...' );
+    return this.move_to_cell( state, this._cell.get_north_wall(), this._cell.get_north_cell(), Player.prototype.move_north );
+}
+
+Player.prototype.move_to_cell = function( state, wall, cell, push_fn ) {
+    
+    // wall
+    if ( is_not_null( wall ) && wall.is_closed() ) {
+        console.log( '[server] player ' + this.id + ' hits the wall...' );
+        this.damage( state );
+        console.log( '[server] player ' + this.id + ' does not move...' );
+        return false;
+    }
     
     // out of board
-    if ( !cell ) {
-        console.log( '[server] player ' + this.id + ' falls out of board.' );
+    if ( is_null( cell ) ) {
+        console.log( '[server] player ' + this.id + ' falls out of board...' );
         this.unset_cell();
-        return this.die( state );
+        this.die( state );
+        return true; // player moves and dies...
     }
     
-    // push other player if any
-    /*
-    var state_other_player = get_state_player_on_cell( state, cell );
-    if ( state_other_player ) {
-         console.log( '[server] player ' + state_player.id + ' will push player ' + state_other_player.id + ' to cell ' + cell.x + 'x' + cell.y + '...' );
-         state_other_player = push_fn( metadata, state, board, state_other_player );
-         state.players[ state_other_player.id ] = state_other_player;    
-         // if other did not move, treat other robot as a wall
-         if ( player_is_on_cell( state_other_player, cell ) ) {
-            console.log( '[server] player ' + state_player.id + ' hits player ' + state_other_player.id + '.' );
-            return damage( metadata, state, board, state_player );                                                                        
+    // push other player if any ( using the push_fn method )
+    var other_player = cell.get_player();
+    if ( is_not_null( other_player ) ) {
+         console.log( '[server] player ' + this.id + ' tries to push player ' + other_player.id + '...' );
+         if ( push_fn.apply( other_player, state ) === false ) {
+            // treat the other player as a wall
+            console.log( '[server] player ' + this.id + ' hits player ' + other_player.id + '...' );
+            this.damage( state );
+            return false; // player does not move... ( as other player does not move )
          }
-         console.log( '[server] player ' + state_player.id + ' pushes player ' + state_other_player.id + ' to cell ' + state_other_player.x + 'x' + state_other_player.y + '.' );
     }
-    */
     
     // move
     this.set_cell( cell );  
@@ -1104,10 +1119,13 @@ Player.prototype.move_to_cell = function( state, cell ) {
     // hole
     if ( cell.is_hole() ) {
         console.log( '[server] player ' + this.id + ' falls in hole ' + cell.x + '-' + cell.y + '.' );
-        return this.die( state );            
+        this.unset_cell();
+        this.die( state );
+        return true; // player moves and dies...            
     }
     
     console.log( '[server] player ' + this.id + ' moves to cell ' + cell.x + '-' + cell.y + '.' );
+    return true;
 }
 
 // //////////////////////////////////////////////////
