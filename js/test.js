@@ -301,4 +301,48 @@ random = new Random( 42 );
 
 }
 
+{
+    start_test( 'shoot' );
+    
+    var board = new Board();
+    board.load_from_id( 'test_board' );
+    
+    var player = new Player( 42 );
+    player.initialize( board.get_cell( 0, 0 ) );
+    expect_player_position(player, 0, 0, 'east', 10);
+
+    var player_2 = new Player( 2 );
+    player_2.initialize( board.get_cell( 3, 0 ) );
+    expect_player_position(player_2, 3, 0, 'east', 10);
+
+    player.shoot();
+    player_2.uturn();
+    player_2.shoot();
+    expect_player_position(player, 0, 0, 'east', 9);
+    expect_player_position(player_2, 3, 0, 'west', 9);
+    
+    player.slide_right();
+    player_2.slide_left();
+    player.shoot();
+    player_2.shoot();
+    expect_player_position(player, 0, 1, 'east', 9);
+    expect_player_position(player_2, 3, 1, 'west', 9);
+
+    player.turn_left();
+    player_2.turn_left();
+    player.shoot();
+    player_2.shoot();
+    expect_player_position(player, 0, 1, 'north', 9);
+    expect_player_position(player_2, 3, 1, 'south', 9);
+
+}
+
+{
+    start_test( 'initialize' );
+}
+
+{
+    start_test( 'load & dump' );
+}
+
 test_report();

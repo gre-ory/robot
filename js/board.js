@@ -162,14 +162,14 @@ _boards[ 'test_board' ] = function() {
     var board = '';
     board += '         ';
     board += '+-+ + +-+';
-    board += '|      #|';
+    board += '|    #  |';
     board += '+ + + + +';
     board += '    |#   ';
     board += '+ + +-+ +';
     board += '      |  ';
     board += '+-+ + + +';
     board += '|  #    |';
-    board += '+-+ + +-+';
+    board += '+-+ + + +';
     return board;
 };
 
@@ -583,7 +583,7 @@ Card.prototype.play = function( state, player ) {
     if ( is_null( this.play_fn ) ) {
         throw '[error] player ' + player.id + ': invalid card!'; 
     }
-    this.play_fn.apply( player, state );
+    this.play_fn.apply( player, [state] );
 } 
 
 // cards
@@ -599,8 +599,6 @@ var all_cards = [
     new Card( 'r',  2, Player.prototype.turn_right ),
     new Card( 'l',  2, Player.prototype.turn_left ),
     new Card( 'u',  1, Player.prototype.uturn ),
-    new Card( 's4', 0, Player.prototype.shoot_4 ),
-    new Card( 's2', 0, Player.prototype.shoot_2 ),
     new Card( 's',  0, Player.prototype.shoot ),
     new Card( 'p',  0, Player.prototype.pause ),
     new Card( 'r',  0, Player.prototype.repair )
@@ -854,6 +852,20 @@ Player.prototype.gains_one_point = function() {
     if ( this.points < max_points ) {
         this.points = this.points + 1;    
     }
+} 
+
+Player.prototype.die = function( state ) {
+    console.log( '[server] player ' + this.id + ' dies...' );
+    this.looses_all_points();
+}
+
+Player.prototype.damage = function( state ) {
+    console.log( '[server] player ' + this.id + ' looses one point...' );
+    this.looses_one_point();
+    if ( this.is_alive() ) {
+        return;
+    }
+    this.die( state );
 }
 
 // cell
@@ -917,22 +929,6 @@ Player.prototype.add_card = function( card ) {
 Player.prototype.set_card_positions = function( card_positions ) {
     // TODO: validate card_positions
     this._card_positions = card_positions;
-}
-
-// actions
-
-Player.prototype.die = function( state ) {
-    console.log( '[server] player ' + this.id + ' dies...' );
-    this.looses_all_points();
-}
-
-Player.prototype.damage = function( state ) {
-    console.log( '[server] player ' + this.id + ' looses one point...' );
-    this.looses_one_point();
-    if ( this.is_alive() ) {
-        return;
-    }
-    this.die( state );
 }
 
 // actions
@@ -1029,16 +1025,20 @@ Player.prototype.uturn = function( state ) {
     this.orientation.rotate( 2 );
 }
 
-Player.prototype.shoot_4 = function( state ) {
-    console.log( '[server] player ' + this.id + ' shoots 4...' );
-}
-
-Player.prototype.shoot_2 = function( state ) {
-    console.log( '[server] player ' + this.id + ' shoots 2...' );
-}
-
-Player.prototype.shoot_1 = function( state ) {
-    console.log( '[server] player ' + this.id + ' shoots 1...' );
+Player.prototype.shoot = function( state ) {
+    console.log( '[server] player ' + this.id + ' shoots...' );
+    if ( this.toward_north() ) {
+        this.shoot_north( this._cell, state );
+    }
+    else if ( this.toward_east() ) {
+        this.shoot_east( this._cell, state );
+    }
+    else if ( this.toward_south() ) {
+        this.shoot_south( this._cell, state );
+    }
+    else if ( this.toward_west() ) {
+        this.shoot_west( this._cell, state );
+    }
 }
 
 Player.prototype.pause = function( state ) {
@@ -1105,7 +1105,7 @@ Player.prototype.move_to_cell = function( state, wall, cell, push_fn ) {
     var other_player = cell.get_player();
     if ( is_not_null( other_player ) ) {
          console.log( '[server] player ' + this.id + ' tries to push player ' + other_player.id + '...' );
-         if ( push_fn.apply( other_player, state ) === false ) {
+         if ( push_fn.apply( other_player, [state] ) === false ) {
             // treat the other player as a wall
             console.log( '[server] player ' + this.id + ' hits player ' + other_player.id + '...' );
             this.damage( state );
@@ -1126,6 +1126,67 @@ Player.prototype.move_to_cell = function( state, wall, cell, push_fn ) {
     
     console.log( '[server] player ' + this.id + ' moves to cell ' + cell.x + '-' + cell.y + '.' );
     return true;
+}
+
+// shoot
+
+Player.prototype.shoot_east = function( cell, state ) {
+    if ( is_null( cell ) ) {
+        throw '[error] player ' + this.id + ': missing cell!';
+    }
+    console.log( '[server] player ' + this.id + ' shoots east...' );
+    return this.shoot_toward_cell( state, cell.get_east_wall(), cell.get_east_cell(), Player.prototype.shoot_east );
+}
+
+Player.prototype.shoot_south = function( cell, state ) {
+    if ( is_null( cell ) ) {
+        throw '[error] player ' + this.id + ': missing cell!';
+    }
+    console.log( '[server] player ' + this.id + ' shoots south...' );
+    return this.shoot_toward_cell( state, cell.get_south_wall(), cell.get_south_cell(), Player.prototype.shoot_south );
+}
+
+Player.prototype.shoot_west = function( cell, state ) {
+    if ( is_null( cell ) ) {
+        throw '[error] player ' + this.id + ': missing cell!';
+    }
+    console.log( '[server] player ' + this.id + ' shoots west...' );
+    return this.shoot_toward_cell( state, cell.get_west_wall(), cell.get_west_cell(), Player.prototype.shoot_west );
+}
+
+Player.prototype.shoot_north = function( cell, state ) {
+    if ( is_null( cell ) ) {
+        throw '[error] player ' + this.id + ': missing cell!';
+    }
+    console.log( '[server] player ' + this.id + ' shoots north...' );
+    return this.shoot_toward_cell( state, cell.get_north_wall(), cell.get_north_cell(), Player.prototype.shoot_north );
+}
+
+Player.prototype.shoot_toward_cell = function( state, wall, next_cell, shoot_fn ) {
+    
+    // laser hits wall
+    if ( is_not_null( wall ) && wall.is_closed() ) {
+        console.log( '[server] laser of player ' + this.id + ' hits the wall...' );
+        return false;
+    }
+    
+    // laser out of board
+    if ( is_null( next_cell ) ) {
+        console.log( '[server] laser of player ' + this.id + ' hits no player...' );
+        return false;
+    }
+    
+    // laser hits other player on next_cell
+    var other_player = next_cell.get_player();
+    if ( is_not_null( other_player ) ) {
+         console.log( '[server] laser of player ' + this.id + ' hits player ' + other_player.id + '...' );
+         other_player.damage( state );
+         return true;
+    }
+    
+    // laser continue
+    console.log( '[server] laser of player ' + this.id + ' goes through cell ' + next_cell.flush() + '...' );
+    return shoot_fn.apply( this, [next_cell, state] );
 }
 
 // //////////////////////////////////////////////////
