@@ -103,6 +103,63 @@ function assert_eq( msg, computed, expected ) {
     expect_eq( msg, computed, expected, true );
 }
 
+function forbidden_success_callback() {
+    expect_test( 'success callback should NOT be called!', false, false );
+}
+
+function forbidden_error_callback() {
+    expect_test( 'error callback should NOT be called!', false, false );
+}
+
+// //////////////////////////////////////////////////
+//  data
+
+var test_metadata = {
+    boardID: 'test_board',
+    orderOfPlay: [ '41', '42', '43' ],
+    ownPlayerID: '42',
+    players: {
+        "41": {
+            "playerID": 41,
+            "playerName": "player 41",
+            "playerColor": "#a73338",
+            "status": "has_turn",
+            "user": {
+                "userID": 41,
+                "firstName": "Roger",
+                "country": {
+                    "code": "CH",
+                    "name": "Switzerland"
+                },
+                "lastName": "Federer",
+                "name": "Roger Federer",
+                "picture": "http://picture.plynd.com/hYMugrxIMbpWimx7qJ82lFZipE6O28.jpg"
+            }
+        },
+        "42": {
+            "playerID": 42,
+            "playerName": "player 42",
+            "playerColor": "#538f5b",
+            "status": "has_turn",
+            "user": {
+                "userID": 0,
+                "firstName": "Gregory",
+                "country": {
+                    "code": "FR",
+                    "name": "France"
+                },
+                "lastName": "Valigiani",
+                "name": "Gregory Valigiani",
+                "picture": "http://picture.plynd.com/9O7aZtZY19oVhI4iaVn1r5X5IYNaHV.jpg"
+            }
+        }
+    }
+};
+
+expect_eq( 'test_metadata.boardID', test_metadata.boardID, 'test_board' );
+var test_board = load_board_from_id( test_metadata.boardID );
+expect_not_null( 'test_board', test_board );
+
 // //////////////////////////////////////////////////
 //  random
 
@@ -122,47 +179,38 @@ random = new Random( 42 );
 }
 
 // //////////////////////////////////////////////////
-//  board
+//  test board
 
 {
     start_test( 'empty board' );
-    
     var board = new Board();
     assert_not_null( 'board', board );
-    
     var cell = board.get_cell( 0, 0 );
     expect_null( 'cell', cell );
-    
     var start_cells = board.get_start_cells();
     expect_null( 'start_cells', start_cells );
 }
 
 {
     start_test( 'unknown board' );
-    
     var board = load_board_from_id( 'unknown' );
     expect_null( 'board', board );
 }
 
 {
-    start_test( 'simple board' );
-    
+    start_test( 'simple board & simple moves' );
     var board = load_board_from_id( 'simple_board' );
     expect_not_null( 'board', board );
-    
     var cell = board.get_cell( 0, 0 );
     expect_not_null( 'cell', cell );
-    
     var start_cells = board.get_start_cells();
     assert_not_null( 'start_cells', start_cells );
     expect_eq( 'start_cells.length', start_cells.length, 0 );
-    
     var player = new Player( 42 );
     expect_eq( 'player.id', player.id, 42 );
     expect_null( 'player.cell', player._cell );
     player.initialize( cell );
     expect_not_null( 'player.cell', player._cell );
-    
     expect_player_position(player, 0, 0, 'east');
     player.move_forward();
     expect_player_position(player, 1, 0, 'east');
@@ -172,7 +220,6 @@ random = new Random( 42 );
     expect_player_position(player, 0, 1, 'east');
     player.slide_left();
     expect_player_position(player, 0, 0, 'east');
-    
     player.turn_right();
     expect_player_position(player, 0, 0, 'south');
     player.move_forward();
@@ -183,7 +230,6 @@ random = new Random( 42 );
     expect_player_position(player, 1, 0, 'south');
     player.slide_right();
     expect_player_position(player, 0, 0, 'south');
-    
     player.turn_right();
     expect_player_position(player, 0, 0, 'west');
     player.move_backward();
@@ -194,7 +240,6 @@ random = new Random( 42 );
     expect_player_position(player, 0, 1, 'west');
     player.slide_right();
     expect_player_position(player, 0, 0, 'west');
-    
     player.turn_right();
     expect_player_position(player, 0, 0, 'north');
     player.move_backward();
@@ -205,7 +250,6 @@ random = new Random( 42 );
     expect_player_position(player, 1, 0, 'north');
     player.slide_left();
     expect_player_position(player, 0, 0, 'north');
-    
     player.turn_left();
     expect_player_position(player, 0, 0, 'west');
     player.uturn();
@@ -216,25 +260,19 @@ random = new Random( 42 );
     expect_player_position(player, 0, 0, 'south');
     player.turn_left();
     expect_player_position(player, 0, 0, 'east');
-
 }
 
 {
     start_test( 'test board' );
-    
-    var board = load_board_from_id( 'test_board' );
-    expect_not_null( 'board', board );
-    
+    var board = test_board;
     var cell = board.get_cell( 0, 0 );
     expect_not_null( 'cell', cell );
-    
     var player = new Player( 42 );
     expect_eq( 'player.id', player.id, 42 );
     expect_null( 'player.cell', player._cell );
     player.initialize( cell );
     expect_not_null( 'player.cell', player._cell );
     expect_player_position(player, 0, 0, 'south', 10);
-    
     // go hit the wall
     player.move_forward();
     player.turn_left();
@@ -254,26 +292,19 @@ random = new Random( 42 );
 
 {
     start_test( 'interaction' );
-    
-    var board = load_board_from_id( 'test_board' ); 
-    expect_not_null( 'board', board );
-    
+    var board = test_board; 
     var player = new Player( 42 );
     player.initialize( board.get_cell( 0, 0 ) );
     expect_player_position(player, 0, 0, 'south', 10);
-
     var player_2 = new Player( 2 );
     player_2.initialize( board.get_cell( 1, 1 ) );
     expect_player_position(player_2, 1, 1, 'north', 10);
-
     var player_3 = new Player( 3 );
     player_3.initialize( board.get_cell( 1, 2 ) );
     expect_player_position(player_3, 1, 2, 'west', 10);
-
     var player_4 = new Player( 4 );
     player_4.initialize( board.get_cell( 2, 2 ) );
     expect_player_position(player_4, 2, 2, 'west', 10);
-    
     player.move_forward();
     player.turn_left();
     player.move_forward();
@@ -296,100 +327,42 @@ random = new Random( 42 );
     expect_player_position(player_2, 1, 2, 'north', 9);
     expect_player_position(player_3, null, null, null, 0);
     expect_player_position(player_4, 2, 2, 'west', 9);
-
 }
 
 {
     start_test( 'shoot' );
-    
-    var board = load_board_from_id( 'test_board' );
-    expect_not_null( 'board', board );
-    
+    var board = test_board;
     var player = new Player( 42 );
     player.initialize( board.get_cell( 0, 0 ) );
     expect_player_position(player, 0, 0, 'east', 10);
-
     var player_2 = new Player( 2 );
     player_2.initialize( board.get_cell( 3, 0 ) );
     expect_player_position(player_2, 3, 0, 'east', 10);
-
     player.shoot();
     player_2.uturn();
     player_2.shoot();
     expect_player_position(player, 0, 0, 'east', 9);
     expect_player_position(player_2, 3, 0, 'west', 9);
-    
     player.slide_right();
     player_2.slide_left();
     player.shoot();
     player_2.shoot();
     expect_player_position(player, 0, 1, 'east', 9);
     expect_player_position(player_2, 3, 1, 'west', 9);
-
     player.turn_left();
     player_2.turn_left();
     player.shoot();
     player_2.shoot();
     expect_player_position(player, 0, 1, 'north', 9);
     expect_player_position(player_2, 3, 1, 'south', 9);
-
 }
 
 {
     start_test( 'initialize & load & dump' );
-    
-    var plynd_metadata = {
-        orderOfPlay: [ '41', '42', '43' ],
-        ownPlayerID: '42',
-        players: {
-            "41": {
-                "playerID": 41,
-                "playerName": "player 41",
-                "playerColor": "#a73338",
-                "status": "has_turn",
-                "user": {
-                    "userID": 41,
-                    "firstName": "Roger",
-                    "country": {
-                        "code": "CH",
-                        "name": "Switzerland"
-                    },
-                    "lastName": "Federer",
-                    "name": "Roger Federer",
-                    "picture": "http://picture.plynd.com/hYMugrxIMbpWimx7qJ82lFZipE6O28.jpg"
-                }
-            },
-            "42": {
-                "playerID": 42,
-                "playerName": "player 42",
-                "playerColor": "#538f5b",
-                "status": "has_turn",
-                "user": {
-                    "userID": 0,
-                    "firstName": "Gregory",
-                    "country": {
-                        "code": "FR",
-                        "name": "France"
-                    },
-                    "lastName": "Valigiani",
-                    "name": "Gregory Valigiani",
-                    "picture": "http://picture.plynd.com/9O7aZtZY19oVhI4iaVn1r5X5IYNaHV.jpg"
-                }
-            }
-        }
-    };
-    
-    var state = new State();
-    expect_null('board_id', state.get_board_id());
-    expect_null('board', state.get_board());
-    state.load(plynd_metadata, null);
-    expect_eq('board_id', state.get_board_id(), '12x12');
-    expect_not_null('board', state.get_board());
-    state.set_board('test_board');
-    expect_eq('board_id', state.get_board_id(), 'test_board');
-    expect_not_null('board', state.get_board());
+    var state = new State( test_metadata, null );
+    expect_not_null( 'board', state.get_board() );
     state.initialize();
-    expect_not_null('board', state.get_board());
+    expect_not_null( 'board', state.get_board() );
     {
         expect_player_position(state.get_player(41), 3, 0, 'north', 10);
         expect_player_position(state.get_player(42), 0, 0, 'north', 10);
@@ -397,13 +370,52 @@ random = new Random( 42 );
     }
     {
         plynd_state = state.dump();
-        state.load( plynd_metadata, plynd_state );
+        plynd_state.players['42'].p = 42;
+        state = new State( test_metadata, plynd_state );
     }
     {
         expect_player_position(state.get_player(41), 3, 0, 'north', 10);
-        expect_player_position(state.get_player(42), 0, 0, 'north', 10);
+        expect_player_position(state.get_player(42), 0, 0, 'north', 42);
         expect_player_position(state.get_player(43), 2, 2, 'east', 10);
     }
+}
+
+{
+    start_test( 'server initialize' );
+    server_initialize_state( test_metadata, null, null, function( plynd_state ) {
+        expect_not_null( 'plynd_state', plynd_state );
+        {
+            assert_true( '41 in players', '41' in plynd_state.players );
+            var plynd_player = plynd_state.players[ '41' ];
+            expect_not_null( 'plynd_player', plynd_player );
+            expect_eq( 'plynd_player[41].x', plynd_player.x, 0 );
+            expect_eq( 'plynd_player[41].y', plynd_player.y, 0 );
+            expect_eq( 'plynd_player[41].o', plynd_player.o, 3 );
+            expect_eq( 'plynd_player[41].p', plynd_player.p, 10 );
+            expect_eq( 'plynd_player[41].h', plynd_player.h.join(), 'r,f,b,b,f2,l,l,f,r,f' );
+        }
+        {
+            assert_true( '42 in players', '42' in plynd_state.players );
+            var plynd_player = plynd_state.players[ '42' ];
+            expect_not_null( 'plynd_player', plynd_player );
+            expect_eq( 'plynd_player[42].x', plynd_player.x, 3 );
+            expect_eq( 'plynd_player[42].y', plynd_player.y, 0 );
+            expect_eq( 'plynd_player[42].o', plynd_player.o, 3 );
+            expect_eq( 'plynd_player[42].p', plynd_player.p, 10 );
+            expect_eq( 'plynd_player[42].h', plynd_player.h.join(), 'f2,u,f2,sl,b,f2,sr,f,f3,f' );
+        }
+        {
+            assert_true( '43 in players', '43' in plynd_state.players );
+            var plynd_player = plynd_state.players[ '43' ];
+            expect_not_null( 'plynd_player', plynd_player );
+            expect_eq( 'plynd_player[43].x', plynd_player.x, 2 );
+            expect_eq( 'plynd_player[43].y', plynd_player.y, 2 );
+            expect_eq( 'plynd_player[43].o', plynd_player.o, 4 );
+            expect_eq( 'plynd_player[43].p', plynd_player.p, 10 );
+            expect_eq( 'plynd_player[43].h', plynd_player.h.join(), 'f3,f2,f2,f2,f,f3,sr,u,r,sl' );
+        }
+        
+    }, forbidden_error_callback );
 }
 
 test_report();

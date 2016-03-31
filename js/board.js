@@ -22,6 +22,37 @@ function throw_error( msg ) {
     throw msg;
 }
 
+var secure_stringify_cache = [];
+function secure_stringify( key, value ) {
+    if (typeof value === 'object' && value !== null) {
+        if (secure_stringify_cache.indexOf(value) !== -1) {
+            // Circular reference found, discard key
+            return;
+        }
+        // Store value in our collection
+        secure_stringify_cache.push(value);
+    }
+    return value;
+}
+
+function debug( name, value ) {
+    if ( is_not_null( value ) ) {
+        console.log( '[debug] ' + name + ': ' + JSON.stringify( value, secure_stringify, 2 ) );
+    }
+    else {
+        console.log( '[debug] ' + JSON.stringify( name, secure_stringify, 2 ) );
+    }
+}
+
+function info( name, value ) {
+    if ( is_not_null( value ) ) {
+        console.log( '[info] ' + name + ': ' + JSON.stringify( value, null, 2 ) );
+    }
+    else {
+        console.log( '[info] ' + JSON.stringify( name, null, 2 ) );
+    }
+}
+
 // //////////////////////////////////////////////////
 // random
 
@@ -1209,18 +1240,42 @@ Player.prototype.shoot_toward_cell = function( state, wall, next_cell, shoot_fn 
 // //////////////////////////////////////////////////
 // State
 
-function State() {
+function State( plynd_metadata, plynd_state ) {
     // public 
     // private
-    // this._plynd_metadata
-    // this._plynd_state
-    // this._board_id
+    this._plynd_metadata = plynd_metadata;
+    this._plynd_state = plynd_state;
+    // this._players
+    // this._current_player
     // this._board
-    // this._players 
-    // this._history   
+    // this._history
+    
+    // prepare
+    this._prepare();
 }
 
 // plynd
+
+State.prototype._prepare = function() {
+    if ( is_null( this._plynd_metadata ) ) {
+        return;
+    }
+    // prepare players
+    var plynd_metadata_players = is_not_null( this._plynd_metadata.players ) ? this._plynd_metadata.players : {};    
+    var plynd_state_players = is_not_null( this._plynd_state ) && is_not_null( this._plynd_state.players ) ? this._plynd_state.players : {};    
+    this._players = {};
+    for ( var i = 0 ; i < this._plynd_metadata.orderOfPlay.length ; i++ ) {
+        var plynd_player_id = this._plynd_metadata.orderOfPlay[ i ];
+        var player = new Player( plynd_player_id );
+        var plynd_player_metadata = player.id in plynd_metadata_players ? plynd_metadata_players[ player.id ] : null;
+        var plynd_player_state = player.id in plynd_state_players ? plynd_state_players[ player.id ] : null;
+        player.load( plynd_player_metadata, plynd_player_state );
+        this._players[ plynd_player_id ] = player;
+    }
+    this._current_player = this._players[ this._plynd_metadata.ownPlayerID ];
+    // prepare board
+    this._board = load_board_from_id( this._plynd_metadata.boardID );
+}
 
 State.prototype.initialize = function() {
     var start_cells = is_not_null( this._board ) ? this._board.get_start_cells() : [];
@@ -1232,28 +1287,8 @@ State.prototype.initialize = function() {
     }
 }
 
-State.prototype.load = function( plynd_metadata, plynd_state ) {
-    this._plynd_metadata = plynd_metadata || {};
-    this._plynd_metadata.players = this._plynd_metadata.players || {};
-    this._plynd_state = plynd_state || {};
-    this._plynd_state.players = this._plynd_state.players || {};
-    
-    this.set_board( '12x12' );
-    this._players = {};
-    for ( var i = 0 ; i < this._plynd_metadata.orderOfPlay.length ; i++ ) {
-        var plynd_player_id = this._plynd_metadata.orderOfPlay[ i ];
-        var player = new Player( plynd_player_id );
-        var plynd_player_metadata = player.id in this._plynd_metadata.players ? this._plynd_metadata.players[ player.id ] : null;
-        var plynd_player_state = player.id in this._plynd_state.players ? this._plynd_state.players[ player.id ] : null;
-        player.load( plynd_player_metadata, plynd_player_state );
-        this._players[ plynd_player_id ] = player;
-    }
-    this._current_player = this._players[ this._plynd_metadata.ownPlayerID ];
-}
-
 State.prototype.dump = function() {
     var plynd_state = {
-        board_id: this._board_id, 
         players: {}
     };
     for ( var id in this._players ) {
@@ -1272,20 +1307,6 @@ State.prototype.flush = function() {
 }
 
 // board
-
-State.prototype.set_board = function( board_id ) {
-    this._board_id = board_id;
-    this._board = load_board_from_id( this._board_id ); 
-}
-
-State.prototype.unset_board = function( board_id ) {
-    this._board_id = null;
-    this._board = null; 
-}
-
-State.prototype.get_board_id = function() {
-    return this._board_id;
-}
 
 State.prototype.get_board = function() {
     return this._board;
@@ -1314,15 +1335,44 @@ function server_error( err ) {
     return { code:403, data: "Internal error! ( " + err + " )" };    
 }
 
-function server_initialize_state( plynd_state, plynd_metadata ) {
-    var state = new State();
-    state.load( plynd_metadata, plynd_state );
-    state.initialize();
-    console.log( '[server] > initialize_state: state: ' + JSON.stringify( state ) );
-    return state.dump(); 
+function server_initialize_state( plynd_metadata, plynd_state, request, success_fn, error_fn ) {
+    try {
+        var state = new State( plynd_metadata, plynd_state );
+        state.initialize();
+        success_fn( state.dump() );
+    }
+    catch( err ) {
+        error_fn( server_error( err ) );
+    } 
 }
 
-function server_play_cards() {
+function server_retrieve_board( plynd_metadata, plynd_state, request, success_fn, error_fn ) {
+    try {
+        var state = new State();
+        state.load( plynd_metadata, plynd_state );
+        var board = state.get_board();
+        console.log( '[server_retrieve_board] board: ' + JSON.stringify( board ) );
+        success_fn( board );
+    }
+    catch( err ) {
+        error_fn( server_error( err ) );
+    } 
+}
+
+function server_set_move( plynd_metadata, plynd_state, request, success_fn, error_fn ) {
+    try {
+        var state = new State();
+        state.load( plynd_metadata, plynd_state );
+        
+        plynd_state = state.dump();
+        console.log( '[server_set_move] plynd_state: ' + JSON.stringify( plynd_state ) );
+        success_fn( plynd_state );
+    }
+    catch( err ) {
+        error_fn( server_error( err ) );
+    }
+    
+    /*
     var board = get_board( metadata, state );
     var player = get_current_player( metadata, state );
     console.log( '[server] > save_cards: player: ' + JSON.stringify( player ) );
@@ -1362,60 +1412,29 @@ function server_play_cards() {
     event.players = state.players;
     
     // console.log( '[server] > play_cards: event: ' + JSON.stringify( event ) );
+    */
 }
 
 if ( typeof Plynd !== 'undefined' ) { 
-    Plynd.ServerFunctions.initializeState = function( request, success, error ) {
-        try {
-            Plynd.getGame( function( plynd_state, plynd_metadata ) {
-                plynd_state = server_initialize_state( plynd_metadata, plynd_state );
-                success( plynd_state );
-            } );
-        }
-        catch( err ) {
-            return error( server_error( err ) );
-        }
-    }
-    
-    Plynd.ServerFunctions.re_init = function( request, success, error ) {
-        try {
-            Plynd.getGame( function( plynd_state, plynd_metadata ) {
-                plynd_state = server_initialize_state( plynd_metadata, plynd_state );
-                console.log( '[server] > re_init: state: ' + JSON.stringify( state ) );
-                Plynd.updateGame( plynd_state, plynd_state, success, error );
-            } );
-        }
-        catch( err ) {
-            return error( server_error( err ) );
-        }
-    }
-    
-    Plynd.ServerFunctions.retrieve_board = function( request, success, error ) {
-        try {
-            // console.log( '[server] < retrieve_board: request: ' + JSON.stringify( request ) );
-            Plynd.getGame( function( plynd_state, plynd_metadata ) {
-                response = { board: get_board( metadata, state ) } ;
-                // console.log( '[server] > retrieve_board: response: ' + JSON.stringify( response ) );
-                success( response );
-            } );
-        }
-        catch( err ) {
-            return error( server_error( err ) );
-        }
-    }
-    
-    Plynd.ServerFunctions.play_cards = function( request, success, error ) {
+
+    Plynd.ServerFunctions.initializeState = function( request, success_fn, error_fn ) {
         Plynd.getGame( function( plynd_state, plynd_metadata ) {
-            try {
-            
-                
-                
-                Plynd.updateGame( event, state, success, error );
-                
-            }
-            catch( err ) {
-                return error( server_error( err ) );
-            }
+            server_initialize_state( plynd_metadata, plynd_state, request, success_fn, error_fn );
         } );
     }
+    
+    Plynd.ServerFunctions.retrieve_board = function( request, success_fn, error_fn ) {
+        Plynd.getGame( function( plynd_state, plynd_metadata ) {
+            server_retrieve_board( plynd_metadata, plynd_state, request, success_fn, error_fn );
+        } );
+    }
+    
+    Plynd.ServerFunctions.set_move = function( request, success_fn, error_fn ) {
+        Plynd.getGame( function( plynd_state, plynd_metadata ) {
+            server_set_move( plynd_metadata, plynd_state, request, function( plynd_state ) {
+                Plynd.updateGame( null, plynd_state, success_fn, error_fn );    
+            }, error );
+        } );
+    }
+    
 }    
