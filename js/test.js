@@ -9,13 +9,19 @@ var _nb_total = 0;
 
 function start_test( msg ) {
     test_report();
-    console.log( ' ----- test: ' + msg );
+    console.log( '' );
+    console.log( '[test] ' + msg + '...' );
     _current_test = msg;
 }
 
 function test_report() {
     if ( is_not_null( _current_test ) && ( _nb_total > 0 ) ) {
-        console.log( ' ----- test: ' + _current_test + ': ' + parseInt( _nb_success * 100 / ( _nb_total ) ) + '% ( ' + _nb_success + ' / ' + _nb_total + ' )' );
+        if ( _nb_success == _nb_total ) {
+            console.log( '[test] ' + _current_test + ': OK (' + _nb_success + '/' + _nb_total + ')' );
+        }
+        else {
+            throw '[test] ' + _current_test + ': FAILED! (' + _nb_success + '/' + _nb_total + ')';
+        }
     }
     _current_test = null;
     _nb_success = 0;
@@ -25,14 +31,14 @@ function test_report() {
 function expect_test( msg, computed, throw_error ) {
     _nb_total += 1;
     if ( !computed ) {
-        console.log( ' ----- [x] ' + msg );
+        console.log( '[test] ----- [x] ' + msg );
         if ( throw_error ) {
             throw msg;
         }
         return false;
     }
     if ( _debug ) {
-        console.log( ' ----- [ ] ' + msg );
+        console.log( '[test] ----- [ ] ' + msg );
     }
     _nb_success += 1;
     return true;
@@ -62,7 +68,7 @@ function expect_player_position( player, x, y, o, p ) {
     var result = true;
     result &= expect_eq( 'player_' + player.id + '.x', player.x, x );
     result &= expect_eq( 'player_' + player.id + '.y', player.y, y );
-    if ( is_not_null( player.orientation ) ) {
+    if ( player.orientation.is_set() ) {
         result &= expect_eq( 'player_' + player.id + '.o', player.orientation.flush(), o );
     }
     else if ( is_not_null( o ) ) {
@@ -72,7 +78,7 @@ function expect_player_position( player, x, y, o, p ) {
         result &= expect_eq( 'player_' + player.id + '.p', player.points, p );
     }
     if ( !result ) {
-        console.log( ' ----- [x] player: ' + player.flush() );
+        console.log( '[test] ----- [x] player: ' + player.flush() );
     }
     return result;
 }
@@ -104,15 +110,15 @@ random = new Random( 42 );
 
 {
     start_test( 'random' );
-    assert_eq( '1st', 2, random.number( 10 ) );
-    assert_eq( '2nd', 0, random.number( 10 ) );
-    assert_eq( '3rd', 0, random.number( 10 ) );
-    assert_eq( '4th', 8, random.number( 10 ) );
-    assert_eq( '5th', 7, random.number( 10 ) );
-    assert_eq( '6th', 4, random.number( 10 ) );
-    assert_eq( '7th', 4, random.number( 10 ) );
-    assert_eq( '8th', 2, random.number( 10 ) );
-    assert_eq( '9th', 2, random.number( 10 ) );
+    expect_eq( '1st', 2, random.number( 10 ) );
+    expect_eq( '2nd', 0, random.number( 10 ) );
+    expect_eq( '3rd', 0, random.number( 10 ) );
+    expect_eq( '4th', 8, random.number( 10 ) );
+    expect_eq( '5th', 7, random.number( 10 ) );
+    expect_eq( '6th', 4, random.number( 10 ) );
+    expect_eq( '7th', 4, random.number( 10 ) );
+    expect_eq( '8th', 2, random.number( 10 ) );
+    expect_eq( '9th', 2, random.number( 10 ) );
 }
 
 // //////////////////////////////////////////////////
@@ -134,23 +140,15 @@ random = new Random( 42 );
 {
     start_test( 'unknown board' );
     
-    var board = new Board();
-    assert_not_null( 'board', board );
-    board.load_from_id( 'unknown' );
-    
-    var cell = board.get_cell( 0, 0 );
-    expect_null( 'cell', cell );
-    
-    var start_cells = board.get_start_cells();
-    expect_null( 'start_cells', start_cells );
+    var board = load_board_from_id( 'unknown' );
+    expect_null( 'board', board );
 }
 
 {
     start_test( 'simple board' );
     
-    var board = new Board();
-    assert_not_null( 'board', board );
-    board.load_from_id( 'simple_board' );
+    var board = load_board_from_id( 'simple_board' );
+    expect_not_null( 'board', board );
     
     var cell = board.get_cell( 0, 0 );
     expect_not_null( 'cell', cell );
@@ -165,6 +163,7 @@ random = new Random( 42 );
     player.initialize( cell );
     expect_not_null( 'player.cell', player._cell );
     
+    expect_player_position(player, 0, 0, 'east');
     player.move_forward();
     expect_player_position(player, 1, 0, 'east');
     player.move_backward();
@@ -223,9 +222,8 @@ random = new Random( 42 );
 {
     start_test( 'test board' );
     
-    var board = new Board();
-    assert_not_null( 'board', board );
-    board.load_from_id( 'test_board' );
+    var board = load_board_from_id( 'test_board' );
+    expect_not_null( 'board', board );
     
     var cell = board.get_cell( 0, 0 );
     expect_not_null( 'cell', cell );
@@ -257,8 +255,8 @@ random = new Random( 42 );
 {
     start_test( 'interaction' );
     
-    var board = new Board();
-    board.load_from_id( 'test_board' );
+    var board = load_board_from_id( 'test_board' ); 
+    expect_not_null( 'board', board );
     
     var player = new Player( 42 );
     player.initialize( board.get_cell( 0, 0 ) );
@@ -304,8 +302,8 @@ random = new Random( 42 );
 {
     start_test( 'shoot' );
     
-    var board = new Board();
-    board.load_from_id( 'test_board' );
+    var board = load_board_from_id( 'test_board' );
+    expect_not_null( 'board', board );
     
     var player = new Player( 42 );
     player.initialize( board.get_cell( 0, 0 ) );
@@ -338,11 +336,74 @@ random = new Random( 42 );
 }
 
 {
-    start_test( 'initialize' );
-}
-
-{
-    start_test( 'load & dump' );
+    start_test( 'initialize & load & dump' );
+    
+    var plynd_metadata = {
+        orderOfPlay: [ '41', '42', '43' ],
+        ownPlayerID: '42',
+        players: {
+            "41": {
+                "playerID": 41,
+                "playerName": "player 41",
+                "playerColor": "#a73338",
+                "status": "has_turn",
+                "user": {
+                    "userID": 41,
+                    "firstName": "Roger",
+                    "country": {
+                        "code": "CH",
+                        "name": "Switzerland"
+                    },
+                    "lastName": "Federer",
+                    "name": "Roger Federer",
+                    "picture": "http://picture.plynd.com/hYMugrxIMbpWimx7qJ82lFZipE6O28.jpg"
+                }
+            },
+            "42": {
+                "playerID": 42,
+                "playerName": "player 42",
+                "playerColor": "#538f5b",
+                "status": "has_turn",
+                "user": {
+                    "userID": 0,
+                    "firstName": "Gregory",
+                    "country": {
+                        "code": "FR",
+                        "name": "France"
+                    },
+                    "lastName": "Valigiani",
+                    "name": "Gregory Valigiani",
+                    "picture": "http://picture.plynd.com/9O7aZtZY19oVhI4iaVn1r5X5IYNaHV.jpg"
+                }
+            }
+        }
+    };
+    
+    var state = new State();
+    expect_null('board_id', state.get_board_id());
+    expect_null('board', state.get_board());
+    state.load(plynd_metadata, null);
+    expect_eq('board_id', state.get_board_id(), '12x12');
+    expect_not_null('board', state.get_board());
+    state.set_board('test_board');
+    expect_eq('board_id', state.get_board_id(), 'test_board');
+    expect_not_null('board', state.get_board());
+    state.initialize();
+    expect_not_null('board', state.get_board());
+    {
+        expect_player_position(state.get_player(41), 3, 0, 'north', 10);
+        expect_player_position(state.get_player(42), 0, 0, 'north', 10);
+        expect_player_position(state.get_player(43), 2, 2, 'east', 10);
+    }
+    {
+        plynd_state = state.dump();
+        state.load( plynd_metadata, plynd_state );
+    }
+    {
+        expect_player_position(state.get_player(41), 3, 0, 'north', 10);
+        expect_player_position(state.get_player(42), 0, 0, 'north', 10);
+        expect_player_position(state.get_player(43), 2, 2, 'east', 10);
+    }
 }
 
 test_report();

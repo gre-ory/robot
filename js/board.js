@@ -48,7 +48,8 @@ Random.prototype.sort = function() {
 }
 
 Random.prototype.shuffle = function( items ) {
-    items.sort( function() { return 0.5 - this.value(); } );
+    var current_random = this;
+    items.sort( function() { return 0.5 - current_random.value(); } );
     return items;
 }
 
@@ -162,16 +163,134 @@ _boards[ 'test_board' ] = function() {
     var board = '';
     board += '         ';
     board += '+-+ + +-+';
-    board += '|    #  |';
+    board += '|0   # 0|';
     board += '+ + + + +';
     board += '    |#   ';
     board += '+ + +-+ +';
-    board += '      |  ';
+    board += '     0|  ';
     board += '+-+ + + +';
     board += '|  #    |';
     board += '+-+ + + +';
     return board;
-};
+};  
+
+// load helper
+
+function load_board_from_id( board_id ) {
+    var board_text = _boards && ( board_id in _boards ) ? _boards[ board_id ]() : null;
+    var board = board_text ? load_board_from_text( board_text ) : null;
+    return board; 
+}
+
+function load_board_from_text( board_text ) {
+    
+    var items = board_text.split( '+' );
+    var nb_items = items.length;
+    var line_length = nb_items > 0 ? items[ 0 ].length : 0;
+    var nb_column = line_length > 0 ? Math.floor( ( line_length - 1 ) / 2 ) : 0;
+    var nb_row = ( nb_items > 0 ? Math.floor( ( nb_items - 1 ) / ( nb_column + 1 ) ) : 1 ) - 1;
+    
+    var cell_length = 2;
+    var line_length = ( nb_column * cell_length ) + 1;
+    var offset = line_length;
+    
+    var step_start = null;
+    var step_end = null;
+    
+    var board = new Board();
+    board._cells = [];
+    for( var y = 0 ; y < nb_row ; y++ ) {
+        var row = [];  
+        
+        for( var x = 0 ; x < nb_column ; x++ ) {
+            var cell = new Cell( board, x, y );
+            
+            var index_n = offset + ( 2 * line_length * y ) + ( cell_length * x );
+            var char_nw = board_text.charAt( index_n );
+            var char_n_ = board_text.charAt( index_n + 1 );
+            var char_ne = board_text.charAt( index_n + 2 );
+            
+            var index__ = offset + ( 2 * line_length * y ) + line_length + ( cell_length * x );
+            var char__w = board_text.charAt( index__ );
+            var char___ = board_text.charAt( index__ + 1 );
+            var char__e = board_text.charAt( index__ + 2 );
+            
+            var index_s = offset + ( 2 * line_length * y ) + 2 * line_length + ( cell_length * x );
+            var char_sw = board_text.charAt( index_s );
+            var char_s_ = board_text.charAt( index_s + 1 );
+            var char_se = board_text.charAt( index_s + 2 );
+            
+            var step___ = parseInt( char___ );
+            
+            if ( char_nw != char_corner ) {
+                throw '[error] cell( ' + x + ',' + y + ' ) has no corner on nw!';
+            }                                
+            if ( char_ne != char_corner ) {
+                throw '[error] cell( ' + x + ',' + y + ' ) has no corner on ne!';
+            }                                
+            if ( char_sw != char_corner ) {
+                throw '[error] cell( ' + x + ',' + y + ' ) has no corner on sw!';
+            }                                
+            if ( char_se != char_corner ) {
+                throw '[error] cell( ' + x + ',' + y + ' ) has no corner on se!';
+            }
+            
+            if ( char_n_ == char_wall_h ) {
+                cell.set_north_wall();        
+            }                                
+            if ( char_s_ == char_wall_h ) {
+                cell.set_south_wall();       
+            }                                
+            if ( char__w == char_wall_v ) {
+                cell.set_west_wall();        
+            }                                
+            if ( char__e == char_wall_v ) {
+                cell.set_east_wall();         
+            }
+                                            
+            if ( char___ == char_hole ) {
+                cell.set_hole();       
+            }
+            else if ( 0 <= step___ && step___ <= 9 ) {
+                cell.set_step( step___ );
+                step_start = step_start ? step_start : Math.min( step_start, cell.get_step() );
+                step_end = step_end ? step_end : Math.min( step_end, cell.get_step() );
+            }
+            
+            // console.log( '[server] cells: (+) ' + cell.flush() );
+            row.push( cell );
+        }
+        
+        board._cells.push( row );
+    }
+
+    if ( is_null( step_start ) ) {
+        step_start = 0;    
+    }
+    if ( is_null( step_end ) ) {
+        step_end = step_start;    
+    }
+    
+    for ( var y = 0 ; y < board._cells.length ; y++ ) {
+        var row = board._cells[ y ];
+        for ( var x = 0 ; x < row.length ; x++ ) {
+            var cell = row[ x ];
+            if ( !cell.has_step() ) {
+                continue;
+            }
+            if ( cell.get_step() == step_start ) {
+                cell.set_start();
+            }
+            else if ( cell.get_step() == step_end ) {
+                cell.set_end();
+            }
+            else if ( cell.get_step() ) {
+                cell.set_step( cell.get_step() - step_start );
+            } 
+        }
+    }
+    return board;
+}
 
 // //////////////////////////////////////////////////
 // Orientation
@@ -182,11 +301,10 @@ function Orientation() {
     // public
     // private
     // this._index
-    this.set( random.number( 4 ) );
 }
 
-Orientation.prototype.flush = function() {
-    return orientations[ this._index - 1 ]; 
+Orientation.prototype.initialize = function() {
+    this.set( random.number( 4 ) ); 
 }
 
 Orientation.prototype.get = function() {
@@ -199,6 +317,21 @@ Orientation.prototype.set = function( index ) {
     }
     this._index = index % 4;
     this._index = this._index > 0 ? this._index : 4;
+}
+
+Orientation.prototype.flush = function() {
+    if ( is_null( this._index ) ) {
+        return '';
+    }
+    return orientations[ this._index - 1 ]; 
+}
+
+Orientation.prototype.is_set = function() {
+    return is_not_null( this._index );
+}
+
+Orientation.prototype.unset = function() {
+    this._index = null;
 }
 
 Orientation.prototype.rotate = function( nb_quarter ) {
@@ -324,6 +457,10 @@ Cell.prototype.set_step = function( step ) {
     this._step = step;
 }
 
+Cell.prototype.has_step = function() {
+    return is_not_null( this._step );
+}
+
 Cell.prototype.get_step = function() {
     return this._step;
 }
@@ -428,111 +565,6 @@ Cell.prototype.get_north_cell = function() {
 // Board
 
 function Board() {
-}
-
-// load
-
-Board.prototype.load_from_id = function( board_id ) {
-    var board_text = _boards && ( board_id in _boards ) ? _boards[ board_id ]() : null;
-    return board_text ? this.load_from_text( board_text ) : null; 
-}
-
-Board.prototype.load_from_text = function build_board_from_text( board_text ) {
-    
-    var items = board_text.split( '+' );
-    var nb_items = items.length;
-    var line_length = nb_items > 0 ? items[ 0 ].length : 0;
-    var nb_column = line_length > 0 ? Math.floor( ( line_length - 1 ) / 2 ) : 0;
-    var nb_row = ( nb_items > 0 ? Math.floor( ( nb_items - 1 ) / ( nb_column + 1 ) ) : 1 ) - 1;
-    
-    var cell_length = 2;
-    var line_length = ( nb_column * cell_length ) + 1;
-    var offset = line_length;
-    
-    var step_start = null;
-    var step_end = null;
-    
-    this._cells = [];    
-    for( var y = 0 ; y < nb_row ; y++ ) {
-        var row = [];  
-        
-        for( var x = 0 ; x < nb_column ; x++ ) {
-            var cell = new Cell( this, x, y );
-            
-            var index_n = offset + ( 2 * line_length * y ) + ( cell_length * x );
-            var char_nw = board_text.charAt( index_n );
-            var char_n_ = board_text.charAt( index_n + 1 );
-            var char_ne = board_text.charAt( index_n + 2 );
-            
-            var index__ = offset + ( 2 * line_length * y ) + line_length + ( cell_length * x );
-            var char__w = board_text.charAt( index__ );
-            var char___ = board_text.charAt( index__ + 1 );
-            var char__e = board_text.charAt( index__ + 2 );
-            
-            var index_s = offset + ( 2 * line_length * y ) + 2 * line_length + ( cell_length * x );
-            var char_sw = board_text.charAt( index_s );
-            var char_s_ = board_text.charAt( index_s + 1 );
-            var char_se = board_text.charAt( index_s + 2 );
-            
-            var step___ = parseInt( char___ );
-            
-            if ( char_nw != char_corner ) {
-                throw '[error] cell( ' + x + ',' + y + ' ) has no corner on nw!';
-            }                                
-            if ( char_ne != char_corner ) {
-                throw '[error] cell( ' + x + ',' + y + ' ) has no corner on ne!';
-            }                                
-            if ( char_sw != char_corner ) {
-                throw '[error] cell( ' + x + ',' + y + ' ) has no corner on sw!';
-            }                                
-            if ( char_se != char_corner ) {
-                throw '[error] cell( ' + x + ',' + y + ' ) has no corner on se!';
-            }
-            
-            if ( char_n_ == char_wall_h ) {
-                cell.set_north_wall();        
-            }                                
-            if ( char_s_ == char_wall_h ) {
-                cell.set_south_wall();       
-            }                                
-            if ( char__w == char_wall_v ) {
-                cell.set_west_wall();        
-            }                                
-            if ( char__e == char_wall_v ) {
-                cell.set_east_wall();         
-            }
-                                            
-            if ( char___ == char_hole ) {
-                cell.set_hole();       
-            }
-            else if ( 0 <= step___ && step___ <= 9 ) {
-                cell.set_step( step___ );
-                step_start = step_start ? step_start : Math.min( step_start, cell.get_step() );
-                step_end = step_end ? step_end : Math.min( step_end, cell.get_step() );
-            }
-            
-            // console.log( '[server] cells: (+) ' + cell.flush() );
-            row.push( cell );
-        }
-        
-        this._cells.push( row );
-    }
-    
-    for ( var y = 0 ; y < board.length ; y++ ) {
-        var row = this._cells[ y ];
-        for ( var x = 0 ; x < row.length ; x++ ) {
-            var cell = row[ x ];
-            if ( cell.get_step() == step_start ) {
-                cell.set_start();
-            }
-            else if ( cell.get_step() == step_end ) {
-                cell.set_end();
-            }
-            else if ( cell.get_step() ) {
-                cell.set_step( cell.get_step() - step_start );
-            } 
-        }
-    }
 }
 
 // cell
@@ -663,7 +695,7 @@ var max_points = 10;
 function Player( id ) {
     // public 
     this.id = id;
-    // this.orientation
+    this.orientation = new Orientation();
     // this.name
     // this.first_name
     // this.last_name
@@ -686,7 +718,7 @@ function Player( id ) {
 
 Player.prototype.initialize = function( cell ) {
     this.set_cell( cell );
-    this.orientation = new Orientation();
+    this.orientation.initialize();
     this.points = max_points;
     this.hand = Card.deal( this.points, false );
     this.move = [];
@@ -695,10 +727,6 @@ Player.prototype.initialize = function( cell ) {
 // load
 
 Player.prototype.load = function( plynd_metadata, plynd_state ) {
-    if ( !plynd_metadata || !plynd_state || !plynd_state.players ) {
-        return;
-    }
-    this.id = plynd_state_player.id;
     
     // metadata
 
@@ -721,15 +749,14 @@ Player.prototype.load = function( plynd_metadata, plynd_state ) {
         }
     },
     */
-        
-    var plynd_metadata_player = plynd_metadata.players[ this.id ];
-    if ( plynd_metadata_player ) {
-        this.name = plynd_metadata_player.playerName;
-        // this.first_name = plynd_metadata_player.user.firstName;
-        // this.last_name = plynd_metadata_player.user.lastName;
-        // this.picture = plynd_metadata_player.user.picture;
-        this.color = plynd_metadata_player.playerColor;
-        this.status = plynd_metadata_player.status;
+
+    if ( plynd_metadata ) {       
+        this.name = plynd_metadata.playerName;
+        // this.first_name = plynd_metadata.user.firstName;
+        // this.last_name = plynd_metadata.user.lastName;
+        // this.picture = plynd_metadata.user.picture;
+        this.color = plynd_metadata.playerColor;
+        this.status = plynd_metadata.status;
     }
     
     // state
@@ -739,62 +766,48 @@ Player.prototype.load = function( plynd_metadata, plynd_state ) {
         "id": 23160,
         "x": 5,
         "y": 2,
-        "orientation": 1,
-        "active": true,
-        "live": 10,
-        "cards": [
-            "move_forward",
-            "turn_left",
-            "turn_right",
-            "move_2_forward",
-            "move_2_forward",
-            "move_2_forward",
-            "turn_right",
-            "turn_right",
-            "uturn",
-            "slide_left"
-        ],
-        "card_positions": null,
-        "alive": true
+        "o": 1,
+        "p": 10,
+        "h": [ ... ],
+        "m": [ ... ]
     }
     */    
 
-    var plynd_state_player = plynd_state.players[ this.id ];
-    if ( plynd_state_player ) {
-        this.x = plynd_state_player.x;
-        this.y = plynd_state_player.y;
-        this.orientation.set( plynd_state_player.o );
-        this.points = plynd_state_player.p;
-        this.hand = plynd_state_player.h || [];
-        this.move = plynd_state_player.m || [];
+    if ( plynd_state ) {
+        this.x = plynd_state.x;
+        this.y = plynd_state.y;
+        this.orientation.set( plynd_state.o );
+        this.points = plynd_state.p;
+        this.hand = plynd_state.h || [];
+        this.move = plynd_state.m || [];
     }    
 }
 
 // dump
 
-Player.prototype.dump = function( plynd_state ) {
-    plynd_state = plynd_state || {}; 
-    plynd_state.players = plynd_state.players || {};
-    var plynd_state_player = {};
+Player.prototype.dump = function() {
+    var plynd_state = {}; 
+    if ( is_not_null( this.id ) ) {
+        plynd_state.id = this.id;
+    }
     if ( is_not_null( this.x ) ) {
-        plynd_state_player.x = this.x;
+        plynd_state.x = this.x;
     }
     if ( is_not_null( this.y ) ) {
-        plynd_state_player.y = this.y;
+        plynd_state.y = this.y;
     }
-    if ( is_not_null( this._orientation ) ) {
-        plynd_state_player.o = this.orientation.get();
+    if ( this.orientation.is_set() ) {
+        plynd_state.o = this.orientation.get();
     }
     if ( is_not_null( this.points ) ) {
-        plynd_state_player.p = this.points;
+        plynd_state.p = this.points;
     }
     if ( is_not_null( this.hand ) && this.hand.length > 0 ) {
-        plynd_state_player.h = this.hand;
+        plynd_state.h = this.hand;
     }
     if ( is_not_null( this.move ) && this.move.length > 0 ) {
-        plynd_state_player.m = this.move;
+        plynd_state.m = this.move;
     }
-    plynd_state.players[this.id] = plynd_state_player;
     return plynd_state;
 }
 
@@ -803,24 +816,25 @@ Player.prototype.dump = function( plynd_state ) {
 Player.prototype.flush = function() {
     var out = null;
     var sep = '';
+    var out = '{ id: ' + this.id;
     if ( is_not_null( this.points ) ) {
-        out = ( out ? out + ',' : '{' ) + ' p: ' + this.points;
+        out += ', p: ' + this.points;
     }
-    if ( is_not_null( this.orientation ) ) {
-        out = ( out ? out + ',' : '{' ) + ' o: ' + this.orientation.flush();
+    if ( this.orientation.is_set() ) {
+        out += ', o: ' + this.orientation.flush();
     }
     if ( is_not_null( this._cell ) ) {
-        out = ( out ? out + ',' : '{' ) + ' c: ' + this._cell.flush();
+        out += ', c: ' + this._cell.flush();
     }
     else {
         if ( is_not_null( this.y ) ) {
-            out = ( out ? out + ',' : '{' ) + ' x: ' + this.x;
+            out += ', x: ' + this.x;
         }
         if ( is_not_null( this.y ) ) {
-            out = ( out ? out + ',' : '{' ) + ' y: ' + this.y;
+            out += ', y: ' + this.y;
         }
     }
-    out = ( out ? out + ' }' : '{}' );
+    out += ' }';
     return out;
 }
 
@@ -856,6 +870,8 @@ Player.prototype.gains_one_point = function() {
 
 Player.prototype.die = function( state ) {
     console.log( '[server] player ' + this.id + ' dies...' );
+    this.unset_cell();
+    this.unset_orientation();
     this.looses_all_points();
 }
 
@@ -877,7 +893,6 @@ Player.prototype.unset_cell = function() {
     this._cell = null;
     this.x = null;
     this.y = null;
-    this.orientation = null;
 }
 
 Player.prototype.set_cell = function( cell ) {
@@ -899,6 +914,10 @@ Player.prototype.get_cell = function() {
 }
 
 // orientation
+
+Player.prototype.unset_orientation = function() {
+    this.orientation.unset();
+}
 
 Player.prototype.rotate = function( nb_quarter ) {
     this.orientation.rotate( nb_quarter );
@@ -1096,7 +1115,6 @@ Player.prototype.move_to_cell = function( state, wall, cell, push_fn ) {
     // out of board
     if ( is_null( cell ) ) {
         console.log( '[server] player ' + this.id + ' falls out of board...' );
-        this.unset_cell();
         this.die( state );
         return true; // player moves and dies...
     }
@@ -1119,7 +1137,6 @@ Player.prototype.move_to_cell = function( state, wall, cell, push_fn ) {
     // hole
     if ( cell.is_hole() ) {
         console.log( '[server] player ' + this.id + ' falls in hole ' + cell.x + '-' + cell.y + '.' );
-        this.unset_cell();
         this.die( state );
         return true; // player moves and dies...            
     }
@@ -1197,69 +1214,81 @@ function State() {
     // private
     // this._plynd_metadata
     // this._plynd_state
+    // this._board_id
+    // this._board
     // this._players 
     // this._history   
 }
 
 // plynd
 
-State.prototype.initialize = function( player_ids, cells ) {
-    
-    this._players = {};
-    for ( var i = 0 ; i < this._plynd_metadata.orderOfPlay.length ; i++ ) {
-        var plynd_player_id = metadata.orderOfPlay[ i ];
-        var player = new Player( plynd_player_id );
-        player.load( plynd_metadata, plynd_state );
-        this._players[ plynd_player_id ] = player;
+State.prototype.initialize = function() {
+    var start_cells = is_not_null( this._board ) ? this._board.get_start_cells() : [];
+    var index = 0;
+    for ( var id in this._players ) {
+        var start_cell = index < start_cells.length ? start_cells[ index ] : null;
+        this._players[ id ].initialize( start_cell );
+        index++;
     }
-    
-    this._history = [];
-    
-    this.set_cell( cell );
-    this.orientation = plynd_state_player.orientation;
-    this.points = min_points;
-    this.hand = Card.deal( this.points, false );
-    this.move = [];
 }
 
 State.prototype.load = function( plynd_metadata, plynd_state ) {
-    if ( !plynd_metadata || !plynd_state ) {
-        return;
-    }
-    this._plynd_metadata = plynd_metadata;
-    this._plynd_state = plynd_state;
-
+    this._plynd_metadata = plynd_metadata || {};
+    this._plynd_metadata.players = this._plynd_metadata.players || {};
+    this._plynd_state = plynd_state || {};
+    this._plynd_state.players = this._plynd_state.players || {};
+    
+    this.set_board( '12x12' );
     this._players = {};
     for ( var i = 0 ; i < this._plynd_metadata.orderOfPlay.length ; i++ ) {
-        var plynd_player_id = metadata.orderOfPlay[ i ];
+        var plynd_player_id = this._plynd_metadata.orderOfPlay[ i ];
         var player = new Player( plynd_player_id );
-        player.load( plynd_metadata, plynd_state );
+        var plynd_player_metadata = player.id in this._plynd_metadata.players ? this._plynd_metadata.players[ player.id ] : null;
+        var plynd_player_state = player.id in this._plynd_state.players ? this._plynd_state.players[ player.id ] : null;
+        player.load( plynd_player_metadata, plynd_player_state );
         this._players[ plynd_player_id ] = player;
     }
     this._current_player = this._players[ this._plynd_metadata.ownPlayerID ];
 }
 
 State.prototype.dump = function() {
-    var plynd_state = {};
-    for ( var i = 0 ; i < this._players.length ; i++ ) {
-        var player = this._players[ i ];
-        plynd_state = player.dump( plynd_state );
+    var plynd_state = {
+        board_id: this._board_id, 
+        players: {}
+    };
+    for ( var id in this._players ) {
+        plynd_state.players[ id ] = this._players[ id ].dump();
     }
     return plynd_state;
-} 
-
-// player
-
-State.prototype.initialize = function() {
-    if ( id in this._players ) {
-        return this._players[id];
-    }
-    this._players[id] = new Player( id );
-    return this._players[id];
 }
 
-State.prototype.get_current_player = function() {
-    return this._current_player;
+State.prototype.flush = function() {
+    var out = null;
+    for ( var id in this._players ) {
+        out = ( out ? out + ', ' : '[ ' ) + this._players[id].flush();
+    }
+    out = ( out ? out + ' ]' : '[]' );
+    return out;
+}
+
+// board
+
+State.prototype.set_board = function( board_id ) {
+    this._board_id = board_id;
+    this._board = load_board_from_id( this._board_id ); 
+}
+
+State.prototype.unset_board = function( board_id ) {
+    this._board_id = null;
+    this._board = null; 
+}
+
+State.prototype.get_board_id = function() {
+    return this._board_id;
+}
+
+State.prototype.get_board = function() {
+    return this._board;
 }
 
 // player
@@ -1275,3 +1304,118 @@ State.prototype.get_player = function( id ) {
 State.prototype.get_current_player = function() {
     return this._current_player;
 } 
+
+// //////////////////////////////////////////////////
+// plynd
+
+function server_error( err ) {
+    console.log( '[server] exception: ' + err );
+    console.log( err.stack );
+    return { code:403, data: "Internal error! ( " + err + " )" };    
+}
+
+function server_initialize_state( plynd_state, plynd_metadata ) {
+    var state = new State();
+    state.load( plynd_metadata, plynd_state );
+    state.initialize();
+    console.log( '[server] > initialize_state: state: ' + JSON.stringify( state ) );
+    return state.dump(); 
+}
+
+function server_play_cards() {
+    var board = get_board( metadata, state );
+    var player = get_current_player( metadata, state );
+    console.log( '[server] > save_cards: player: ' + JSON.stringify( player ) );
+    
+    // apply directly
+    // state = apply_cards( metadata, state, board, player, request.card_positions );
+    
+    state = save_cards( metadata, state, board, player, request.card_positions );
+    console.log( '[server] > save_cards: cards: ' + JSON.stringify( request.card_positions ) );
+
+    var event = { endTurn: true };
+    
+    if ( everyone_has_played( metadata, state ) ) {
+        
+        console.log( '[server] > triggre end of turn...' );
+        
+        // trigger end of turn
+        state = apply_all_cards( metadata, state, board );
+        
+        // compute winner                
+        var winnerID = compute_winner_ids( metadata, state );
+        if ( winnerID ) {
+            event.winnerID = winnerID;    
+        }
+        
+        // compute eliminated
+        var eliminatedID = compute_eliminated_ids( metadata, state );
+        if ( eliminatedID ) {
+            event.eliminatedID = eliminatedID;    
+        }
+        
+        // reshuffle cards
+        state = build_turn_state( metadata, state );
+    }
+    
+    // save players           
+    event.players = state.players;
+    
+    // console.log( '[server] > play_cards: event: ' + JSON.stringify( event ) );
+}
+
+if ( typeof Plynd !== 'undefined' ) { 
+    Plynd.ServerFunctions.initializeState = function( request, success, error ) {
+        try {
+            Plynd.getGame( function( plynd_state, plynd_metadata ) {
+                plynd_state = server_initialize_state( plynd_metadata, plynd_state );
+                success( plynd_state );
+            } );
+        }
+        catch( err ) {
+            return error( server_error( err ) );
+        }
+    }
+    
+    Plynd.ServerFunctions.re_init = function( request, success, error ) {
+        try {
+            Plynd.getGame( function( plynd_state, plynd_metadata ) {
+                plynd_state = server_initialize_state( plynd_metadata, plynd_state );
+                console.log( '[server] > re_init: state: ' + JSON.stringify( state ) );
+                Plynd.updateGame( plynd_state, plynd_state, success, error );
+            } );
+        }
+        catch( err ) {
+            return error( server_error( err ) );
+        }
+    }
+    
+    Plynd.ServerFunctions.retrieve_board = function( request, success, error ) {
+        try {
+            // console.log( '[server] < retrieve_board: request: ' + JSON.stringify( request ) );
+            Plynd.getGame( function( plynd_state, plynd_metadata ) {
+                response = { board: get_board( metadata, state ) } ;
+                // console.log( '[server] > retrieve_board: response: ' + JSON.stringify( response ) );
+                success( response );
+            } );
+        }
+        catch( err ) {
+            return error( server_error( err ) );
+        }
+    }
+    
+    Plynd.ServerFunctions.play_cards = function( request, success, error ) {
+        Plynd.getGame( function( plynd_state, plynd_metadata ) {
+            try {
+            
+                
+                
+                Plynd.updateGame( event, state, success, error );
+                
+            }
+            catch( err ) {
+                return error( server_error( err ) );
+            }
+        } );
+    }
+}    
