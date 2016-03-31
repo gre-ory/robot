@@ -42,6 +42,7 @@ function debug( name, value ) {
     else {
         console.log( '[debug] ' + JSON.stringify( name, secure_stringify, 2 ) );
     }
+    secure_stringify_cache = [];
 }
 
 function info( name, value ) {
@@ -51,6 +52,7 @@ function info( name, value ) {
     else {
         console.log( '[info] ' + JSON.stringify( name, null, 2 ) );
     }
+    secure_stringify_cache = [];
 }
 
 // //////////////////////////////////////////////////
@@ -803,7 +805,7 @@ Player.prototype.load = function( plynd_metadata, plynd_state ) {
         "m": [ ... ]
     }
     */    
-
+    
     if ( plynd_state ) {
         this.x = plynd_state.x;
         this.y = plynd_state.y;
@@ -972,13 +974,23 @@ Player.prototype.toward_north = function() {
 
 // card
 
+/*
 Player.prototype.add_card = function( card ) {
     this._cards.push( card );
 }
+*/
 
-Player.prototype.set_card_positions = function( card_positions ) {
-    // TODO: validate card_positions
-    this._card_positions = card_positions;
+Player.prototype.get_hand = function() {
+    return this.hand;
+}
+
+Player.prototype.get_move = function() {
+    return this.move;
+}
+
+Player.prototype.set_move = function( move ) {
+    // TODO: validate move
+    this.move = move;
 }
 
 // actions
@@ -1261,7 +1273,7 @@ State.prototype._prepare = function() {
         return;
     }
     // prepare players
-    var plynd_metadata_players = is_not_null( this._plynd_metadata.players ) ? this._plynd_metadata.players : {};    
+    var plynd_metadata_players = is_not_null( this._plynd_metadata.players ) ? this._plynd_metadata.players : {};
     var plynd_state_players = is_not_null( this._plynd_state ) && is_not_null( this._plynd_state.players ) ? this._plynd_state.players : {};    
     this._players = {};
     for ( var i = 0 ; i < this._plynd_metadata.orderOfPlay.length ; i++ ) {
@@ -1272,7 +1284,7 @@ State.prototype._prepare = function() {
         player.load( plynd_player_metadata, plynd_player_state );
         this._players[ plynd_player_id ] = player;
     }
-    this._current_player = this._players[ this._plynd_metadata.ownPlayerID ];
+    this._current_player_id = this._plynd_metadata.ownPlayerID;
     // prepare board
     this._board = load_board_from_id( this._plynd_metadata.boardID );
 }
@@ -1323,7 +1335,7 @@ State.prototype.get_player = function( id ) {
 }
 
 State.prototype.get_current_player = function() {
-    return this._current_player;
+    return this.get_player( this._current_player_id );
 } 
 
 // //////////////////////////////////////////////////
@@ -1348,10 +1360,8 @@ function server_initialize_state( plynd_metadata, plynd_state, request, success_
 
 function server_retrieve_board( plynd_metadata, plynd_state, request, success_fn, error_fn ) {
     try {
-        var state = new State();
-        state.load( plynd_metadata, plynd_state );
+        var state = new State( plynd_metadata, plynd_state );
         var board = state.get_board();
-        console.log( '[server_retrieve_board] board: ' + JSON.stringify( board ) );
         success_fn( board );
     }
     catch( err ) {
@@ -1361,12 +1371,10 @@ function server_retrieve_board( plynd_metadata, plynd_state, request, success_fn
 
 function server_set_move( plynd_metadata, plynd_state, request, success_fn, error_fn ) {
     try {
-        var state = new State();
-        state.load( plynd_metadata, plynd_state );
-        
-        plynd_state = state.dump();
-        console.log( '[server_set_move] plynd_state: ' + JSON.stringify( plynd_state ) );
-        success_fn( plynd_state );
+        var state = new State( plynd_metadata, plynd_state );
+        var player = state.get_current_player();
+        player.set_move( request.move );
+        success_fn( state.dump() );
     }
     catch( err ) {
         error_fn( server_error( err ) );

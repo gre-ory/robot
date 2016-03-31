@@ -380,9 +380,12 @@ random = new Random( 42 );
     }
 }
 
+var test_plynd_state = null;
+
 {
     start_test( 'server initialize' );
     server_initialize_state( test_metadata, null, null, function( plynd_state ) {
+        test_plynd_state = plynd_state;
         expect_not_null( 'plynd_state', plynd_state );
         {
             assert_true( '41 in players', '41' in plynd_state.players );
@@ -414,8 +417,55 @@ random = new Random( 42 );
             expect_eq( 'plynd_player[43].p', plynd_player.p, 10 );
             expect_eq( 'plynd_player[43].h', plynd_player.h.join(), 'f3,f2,f2,f2,f,f3,sr,u,r,sl' );
         }
-        
     }, forbidden_error_callback );
+}
+
+{
+    start_test( 'server retrieve board' );
+    server_initialize_state( test_metadata, null, null, function( board ) {
+        expect_not_null( 'board', board );
+    }, forbidden_error_callback );
+}
+
+{
+    start_test( 'server set move' );
+    {
+        test_metadata.ownPlayerID = '43';
+        var move_request = { move: [ 7, 9, 6, 8, 4 ] };
+        server_set_move( test_metadata, test_plynd_state, move_request, function( plynd_state ) {
+            expect_not_null( 'plynd_state', plynd_state );
+            test_plynd_state = plynd_state;
+            var player = test_plynd_state.players[ test_metadata.ownPlayerID ];
+            expect_not_null( 'player[' + test_metadata.ownPlayerID + ']', player );
+            expect_eq( 'players[' + test_metadata.ownPlayerID + '].move', player.m.join(), '7,9,6,8,4' );
+        }, forbidden_error_callback );
+        // debug( 'state.players[' + test_metadata.ownPlayerID + ']', test_plynd_state.players[ test_metadata.ownPlayerID ] );
+    }
+    {
+        test_metadata.ownPlayerID = '41';
+        var move_request = { move: [ 3, 6, 4, 3, 7 ] };
+        server_set_move( test_metadata, test_plynd_state, move_request, function( plynd_state ) {
+            expect_not_null( 'plynd_state', plynd_state );
+            test_plynd_state = plynd_state;
+            var player = test_plynd_state.players[ test_metadata.ownPlayerID ];
+            expect_not_null( 'player[' + test_metadata.ownPlayerID + ']', player );
+            expect_eq( 'players[' + test_metadata.ownPlayerID + '].move', player.m.join(), '3,6,4,3,7' );
+        }, forbidden_error_callback );
+        // debug( 'state.players[' + test_metadata.ownPlayerID + ']', test_plynd_state.players[ test_metadata.ownPlayerID ] );
+    }
+    {
+        test_metadata.ownPlayerID = '42';
+        var move_request = { move: [ 6, 4, 5, 1, 3 ] };
+        server_set_move( test_metadata, test_plynd_state, move_request, function( plynd_state ) {
+            expect_not_null( 'plynd_state', plynd_state );
+            test_plynd_state = plynd_state;
+            var player = test_plynd_state.players[ test_metadata.ownPlayerID ];
+            expect_not_null( 'player[' + test_metadata.ownPlayerID + ']', player );
+            expect_eq( 'players[' + test_metadata.ownPlayerID + '].move', player.m.join(), '6,4,5,1,3' );
+        }, forbidden_error_callback );
+        // debug( 'state.players[' + test_metadata.ownPlayerID + ']', test_plynd_state.players[ test_metadata.ownPlayerID ] );
+    }
+    // debug( 'state.players', test_plynd_state.players );
 }
 
 test_report();
