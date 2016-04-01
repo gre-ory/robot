@@ -24,8 +24,12 @@ function throw_error( msg ) {
 
 var secure_stringify_cache = [];
 function secure_stringify( key, value ) {
-    if (typeof value === 'object' && value !== null) {
-        if (secure_stringify_cache.indexOf(value) !== -1) {
+    if ( typeof value === 'object' && value !== null ) {
+        if ( key.indexOf('_ref') !== -1 ) {
+            // do not print reference to parent
+            return;
+        }
+        if ( secure_stringify_cache.indexOf(value) !== -1 ) {
             // Circular reference found, disprogram key
             return;
         }
@@ -341,7 +345,8 @@ function load_board_from_text( board_text ) {
 // //////////////////////////////////////////////////
 // Orientation
 
-var orientations = [ 'east', 'south', 'west', 'north' ];
+var orientation_chars = [ 'e', 's', 'w', 'n' ];
+var orientation_names = [ 'east', 'south', 'west', 'north' ];
 
 function Orientation() {
     // public
@@ -353,8 +358,20 @@ Orientation.prototype.initialize = function() {
     this.set( random.number( 4 ) ); 
 }
 
-Orientation.prototype.get = function() {
-    return this._index;
+Orientation.prototype.get_char = function() {
+    if ( is_null( this._index ) ) {
+        return '';
+    }
+    return orientation_chars[ this._index ];
+}
+
+Orientation.prototype.set_char = function( orientation_char ) {
+    for ( var i = 0 ; i < 4 ; ++i ) {
+        if ( orientation_chars[ i ] === orientation_char ) {
+            return this.set( i );
+        }
+    }
+    return this.unset();
 }
 
 Orientation.prototype.set = function( index ) {
@@ -362,14 +379,13 @@ Orientation.prototype.set = function( index ) {
         return;
     }
     this._index = index % 4;
-    this._index = this._index > 0 ? this._index : 4;
 }
 
 Orientation.prototype.flush = function() {
     if ( is_null( this._index ) ) {
         return '';
     }
-    return orientations[ this._index - 1 ]; 
+    return orientation_names[ this._index ];
 }
 
 Orientation.prototype.is_set = function() {
@@ -388,19 +404,19 @@ Orientation.prototype.rotate = function( nb_quarter ) {
 }
 
 Orientation.prototype.is_east = function() {
-    return ( this._index === 1 );
+    return ( this._index === 0 );
 }
 
 Orientation.prototype.is_south = function() {
-    return ( this._index === 2 );
+    return ( this._index === 1 );
 }
 
 Orientation.prototype.is_west = function() {
-    return ( this._index === 3 );
+    return ( this._index === 2 );
 }
 
 Orientation.prototype.is_north = function() {
-    return ( this._index === 4 );
+    return ( this._index === 3 );
 }
 
 // //////////////////////////////////////////////////
@@ -444,7 +460,7 @@ function Cell( board, x, y ) {
     this.x = x;
     this.y = y;
     // private
-    this._board = board;
+    this._board_ref = board;
     this._robot = null;
     // this._step
     // this._start
@@ -592,19 +608,19 @@ Cell.prototype.has_north_wall = function() {
 // neighbour
 
 Cell.prototype.get_east_cell = function() {
-    return this._board ? this._board.get_cell( this.x + 1, this.y ) : null;
+    return this._board_ref ? this._board_ref.get_cell( this.x + 1, this.y ) : null;
 }
 
 Cell.prototype.get_south_cell = function() {
-    return this._board ? this._board.get_cell( this.x, this.y + 1 ) : null;
+    return this._board_ref ? this._board_ref.get_cell( this.x, this.y + 1 ) : null;
 }
 
 Cell.prototype.get_west_cell = function() {
-    return this._board ? this._board.get_cell( this.x - 1, this.y ) : null;
+    return this._board_ref ? this._board_ref.get_cell( this.x - 1, this.y ) : null;
 }
 
 Cell.prototype.get_north_cell = function() {
-    return this._board ? this._board.get_cell( this.x, this.y - 1 ) : null;
+    return this._board_ref ? this._board_ref.get_cell( this.x, this.y - 1 ) : null;
 }
 
 // //////////////////////////////////////////////////
@@ -742,7 +758,7 @@ Robot.prototype._prepare = function( plynd_player_metadata, plynd_robot_state, b
             throw '[error] invalid robot position! (' + plynd_robot_state.x + ',' + plynd_robot_state.y + ')';
         }
         this.set_cell( cell );
-        this.orientation.set( plynd_robot_state.o );
+        this.orientation.set_char( plynd_robot_state.o );
         this.points = plynd_robot_state.p;
         this._programs = plynd_robot_state.programs || [];
         this._registers = plynd_robot_state.registers || [];
@@ -763,7 +779,7 @@ Robot.prototype.dump = function() {
         plynd_state.y = this.y;
     }
     if ( this.orientation.is_set() ) {
-        plynd_state.o = this.orientation.get();
+        plynd_state.o = this.orientation.get_char();
     }
     if ( is_not_null( this.points ) ) {
         plynd_state.p = this.points;
@@ -787,7 +803,7 @@ Robot.prototype.flush = function() {
         out += ', p: ' + this.points;
     }
     if ( this.orientation.is_set() ) {
-        out += ', o: ' + this.orientation.flush();
+        out += ', o: ' + this.orientation.get_char();
     }
     if ( is_not_null( this._cell ) ) {
         out += ', c: ' + this._cell.flush();
@@ -1065,7 +1081,6 @@ Robot.prototype.uturn = function( state ) {
 
 Robot.prototype.shoot = function( state ) {
     console.log( '[server] robot ' + this.id + ' shoots...' );
-    debug( 'cell', this._cell );
     if ( this.toward_north() ) {
         this.shoot_north( this._cell, 1, state );
     }
@@ -1603,7 +1618,7 @@ if ( typeof Plynd !== 'undefined' ) {
 // DONE: change 'hand' to 'programs'
 // DONE: change 'program' to 'program'
 // DONE: change 'player' to 'robot'
-// TODO: orientation: change index to char
+// DONE: orientation: change index to char
 // TODO: implement repair action
 // TODO: implement conveyor belt class
 // TODO: implement error class

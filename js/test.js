@@ -69,7 +69,7 @@ function expect_robot_position( robot, x, y, o, p ) {
     result &= expect_eq( 'robot_' + robot.id + '.x', robot.x, x );
     result &= expect_eq( 'robot_' + robot.id + '.y', robot.y, y );
     if ( robot.orientation.is_set() ) {
-        result &= expect_eq( 'robot_' + robot.id + '.o', robot.orientation.flush(), o );
+        result &= expect_eq( 'robot_' + robot.id + '.o', robot.orientation.get_char(), o );
     }
     else if ( is_not_null( o ) ) {
         result &= expect_eq( 'robot_' + robot.id + '.o', null, o );
@@ -210,56 +210,57 @@ random = new Random( 42 );
     expect_eq( 'robot.id', robot.id, 42 );
     expect_null( 'robot.cell', robot._cell );
     robot.initialize( cell );
+    robot.turn_left();
     expect_not_null( 'robot.cell', robot._cell );
-    expect_robot_position(robot, 0, 0, 'east');
+    expect_robot_position(robot, 0, 0, 'e');
     robot.move_forward();
-    expect_robot_position(robot, 1, 0, 'east');
+    expect_robot_position(robot, 1, 0, 'e');
     robot.move_backward();
-    expect_robot_position(robot, 0, 0, 'east');
+    expect_robot_position(robot, 0, 0, 'e');
     robot.slide_right();
-    expect_robot_position(robot, 0, 1, 'east');
+    expect_robot_position(robot, 0, 1, 'e');
     robot.slide_left();
-    expect_robot_position(robot, 0, 0, 'east');
+    expect_robot_position(robot, 0, 0, 'e');
     robot.turn_right();
-    expect_robot_position(robot, 0, 0, 'south');
+    expect_robot_position(robot, 0, 0, 's');
     robot.move_forward();
-    expect_robot_position(robot, 0, 1, 'south');
+    expect_robot_position(robot, 0, 1, 's');
     robot.move_backward();
-    expect_robot_position(robot, 0, 0, 'south');
+    expect_robot_position(robot, 0, 0, 's');
     robot.slide_left();
-    expect_robot_position(robot, 1, 0, 'south');
+    expect_robot_position(robot, 1, 0, 's');
     robot.slide_right();
-    expect_robot_position(robot, 0, 0, 'south');
+    expect_robot_position(robot, 0, 0, 's');
     robot.turn_right();
-    expect_robot_position(robot, 0, 0, 'west');
+    expect_robot_position(robot, 0, 0, 'w');
     robot.move_backward();
-    expect_robot_position(robot, 1, 0, 'west');
+    expect_robot_position(robot, 1, 0, 'w');
     robot.move_forward();
-    expect_robot_position(robot, 0, 0, 'west');
+    expect_robot_position(robot, 0, 0, 'w');
     robot.slide_left();
-    expect_robot_position(robot, 0, 1, 'west');
+    expect_robot_position(robot, 0, 1, 'w');
     robot.slide_right();
-    expect_robot_position(robot, 0, 0, 'west');
+    expect_robot_position(robot, 0, 0, 'w');
     robot.turn_right();
-    expect_robot_position(robot, 0, 0, 'north');
+    expect_robot_position(robot, 0, 0, 'n');
     robot.move_backward();
-    expect_robot_position(robot, 0, 1, 'north');
+    expect_robot_position(robot, 0, 1, 'n');
     robot.move_forward();
-    expect_robot_position(robot, 0, 0, 'north');
+    expect_robot_position(robot, 0, 0, 'n');
     robot.slide_right();
-    expect_robot_position(robot, 1, 0, 'north');
+    expect_robot_position(robot, 1, 0, 'n');
     robot.slide_left();
-    expect_robot_position(robot, 0, 0, 'north');
+    expect_robot_position(robot, 0, 0, 'n');
     robot.turn_left();
-    expect_robot_position(robot, 0, 0, 'west');
+    expect_robot_position(robot, 0, 0, 'w');
     robot.uturn();
-    expect_robot_position(robot, 0, 0, 'east');
+    expect_robot_position(robot, 0, 0, 'e');
     robot.uturn();
-    expect_robot_position(robot, 0, 0, 'west');
+    expect_robot_position(robot, 0, 0, 'w');
     robot.turn_left();
-    expect_robot_position(robot, 0, 0, 'south');
+    expect_robot_position(robot, 0, 0, 's');
     robot.turn_left();
-    expect_robot_position(robot, 0, 0, 'east');
+    expect_robot_position(robot, 0, 0, 'e');
 }
 
 {
@@ -271,21 +272,22 @@ random = new Random( 42 );
     expect_eq( 'robot.id', robot.id, 42 );
     expect_null( 'robot.cell', robot._cell );
     robot.initialize( cell );
+    robot.turn_left();
     expect_not_null( 'robot.cell', robot._cell );
-    expect_robot_position(robot, 0, 0, 'south', 10);
+    expect_robot_position(robot, 0, 0, 's', 10);
     // go hit the wall
     robot.move_forward();
     robot.turn_left();
     robot.move_forward();
-    expect_robot_position(robot, 1, 1, 'east', 10);
+    expect_robot_position(robot, 1, 1, 'e', 10);
     robot.move_forward();
-    expect_robot_position(robot, 1, 1, 'east', 9);
+    expect_robot_position(robot, 1, 1, 'e', 9);
     robot.move_forward();
-    expect_robot_position(robot, 1, 1, 'east', 8);
+    expect_robot_position(robot, 1, 1, 'e', 8);
     robot.move_forward();
-    expect_robot_position(robot, 1, 1, 'east', 7);
+    expect_robot_position(robot, 1, 1, 'e', 7);
     robot.move_backward();
-    expect_robot_position(robot, 0, 1, 'east', 7);
+    expect_robot_position(robot, 0, 1, 'e', 7);
     robot.move_backward();
     expect_robot_position(robot, null, null, null, 0);
 }
@@ -295,38 +297,42 @@ random = new Random( 42 );
     var board = test_board; 
     var robot = new Robot( 42 );
     robot.initialize( board.get_cell( 0, 0 ) );
-    expect_robot_position(robot, 0, 0, 'south', 10);
+    robot.turn_left();
+    expect_robot_position(robot, 0, 0, 's', 10);
     var robot_2 = new Robot( 2 );
     robot_2.initialize( board.get_cell( 1, 1 ) );
-    expect_robot_position(robot_2, 1, 1, 'north', 10);
+    robot_2.turn_left();
+    expect_robot_position(robot_2, 1, 1, 'n', 10);
     var robot_3 = new Robot( 3 );
     robot_3.initialize( board.get_cell( 1, 2 ) );
-    expect_robot_position(robot_3, 1, 2, 'west', 10);
+    robot_3.turn_left();
+    expect_robot_position(robot_3, 1, 2, 'w', 10);
     var robot_4 = new Robot( 4 );
     robot_4.initialize( board.get_cell( 2, 2 ) );
-    expect_robot_position(robot_4, 2, 2, 'west', 10);
+    robot_4.turn_left();
+    expect_robot_position(robot_4, 2, 2, 'w', 10);
     robot.move_forward();
     robot.turn_left();
     robot.move_forward();
-    expect_robot_position(robot, 0, 1, 'east', 9);
-    expect_robot_position(robot_2, 1, 1, 'north', 9);
-    expect_robot_position(robot_3, 1, 2, 'west', 10);
-    expect_robot_position(robot_4, 2, 2, 'west', 10);
+    expect_robot_position(robot, 0, 1, 'e', 9);
+    expect_robot_position(robot_2, 1, 1, 'n', 9);
+    expect_robot_position(robot_3, 1, 2, 'w', 10);
+    expect_robot_position(robot_4, 2, 2, 'w', 10);
     robot.slide_right();
     robot.move_forward();
-    expect_robot_position(robot, 0, 2, 'east', 8);
-    expect_robot_position(robot_2, 1, 1, 'north', 9);
-    expect_robot_position(robot_3, 1, 2, 'west', 9);
-    expect_robot_position(robot_4, 2, 2, 'west', 9);
+    expect_robot_position(robot, 0, 2, 'e', 8);
+    expect_robot_position(robot_2, 1, 1, 'n', 9);
+    expect_robot_position(robot_3, 1, 2, 'w', 9);
+    expect_robot_position(robot_4, 2, 2, 'w', 9);
     robot.slide_left();
     robot.slide_left();
     robot.move_forward();
     robot.turn_right();
     robot.move_forward();
-    expect_robot_position(robot, 1, 1, 'south', 8);
-    expect_robot_position(robot_2, 1, 2, 'north', 9);
+    expect_robot_position(robot, 1, 1, 's', 8);
+    expect_robot_position(robot_2, 1, 2, 'n', 9);
     expect_robot_position(robot_3, null, null, null, 0);
-    expect_robot_position(robot_4, 2, 2, 'west', 9);
+    expect_robot_position(robot_4, 2, 2, 'w', 9);
 }
 
 {
@@ -334,27 +340,29 @@ random = new Random( 42 );
     var board = test_board;
     var robot = new Robot( 42 );
     robot.initialize( board.get_cell( 0, 0 ) );
-    expect_robot_position(robot, 0, 0, 'east', 10);
+    robot.turn_left();
+    expect_robot_position(robot, 0, 0, 'e', 10);
     var robot_2 = new Robot( 2 );
     robot_2.initialize( board.get_cell( 3, 0 ) );
-    expect_robot_position(robot_2, 3, 0, 'east', 10);
+    robot_2.turn_left();
+    expect_robot_position(robot_2, 3, 0, 'e', 10);
     robot.shoot();
     robot_2.uturn();
     robot_2.shoot();
-    expect_robot_position(robot, 0, 0, 'east', 9);
-    expect_robot_position(robot_2, 3, 0, 'west', 9);
+    expect_robot_position(robot, 0, 0, 'e', 9);
+    expect_robot_position(robot_2, 3, 0, 'w', 9);
     robot.slide_right();
     robot_2.slide_left();
     robot.shoot();
     robot_2.shoot();
-    expect_robot_position(robot, 0, 1, 'east', 9);
-    expect_robot_position(robot_2, 3, 1, 'west', 9);
+    expect_robot_position(robot, 0, 1, 'e', 9);
+    expect_robot_position(robot_2, 3, 1, 'w', 9);
     robot.turn_left();
     robot_2.turn_left();
     robot.shoot();
     robot_2.shoot();
-    expect_robot_position(robot, 0, 1, 'north', 9);
-    expect_robot_position(robot_2, 3, 1, 'south', 9);
+    expect_robot_position(robot, 0, 1, 'n', 9);
+    expect_robot_position(robot_2, 3, 1, 's', 9);
 }
 
 {
@@ -366,21 +374,21 @@ random = new Random( 42 );
     {
         {
             var robot = state.get_robot(41);
-            expect_robot_position(robot, 3, 0, 'north', 10);
+            expect_robot_position(robot, 3, 0, 'e', 10);
             expect_eq( 'robot[41].name', robot.name, 'robot 41' );
             expect_eq( 'robot[41].color', robot.color, '#a73338' );
             expect_eq( 'robot[41].status', robot.status, 'has_turn' );
         }
         {
             var robot = state.get_robot(42);
-            expect_robot_position(robot, 0, 0, 'north', 10);
+            expect_robot_position(robot, 0, 0, 'e', 10);
             expect_eq( 'robot[42].name', robot.name, 'robot 42' );
             expect_eq( 'robot[42].color', robot.color, '#538f5b' );
             expect_eq( 'robot[42].status', robot.status, 'has_turn' );
         }
         {
             var robot = state.get_robot(43);
-            expect_robot_position(robot, 2, 2, 'east', 10);
+            expect_robot_position(robot, 2, 2, 's', 10);
             expect_null( 'robot[43].name', robot.name );
             expect_null( 'robot[43].color', robot.color );
             expect_null( 'robot[43].status', robot.status );
@@ -394,21 +402,21 @@ random = new Random( 42 );
     {
         {
             var robot = state.get_robot(41);
-            expect_robot_position(robot, 3, 0, 'north', 10);
+            expect_robot_position(robot, 3, 0, 'e', 10);
             expect_eq( 'robot[41].name', robot.name, 'robot 41' );
             expect_eq( 'robot[41].color', robot.color, '#a73338' );
             expect_eq( 'robot[41].status', robot.status, 'has_turn' );
         }
         {
             var robot = state.get_robot(42);
-            expect_robot_position(robot, 0, 0, 'north', 42);
+            expect_robot_position(robot, 0, 0, 'e', 42);
             expect_eq( 'robot[42].name', robot.name, 'robot 42' );
             expect_eq( 'robot[42].color', robot.color, '#538f5b' );
             expect_eq( 'robot[42].status', robot.status, 'has_turn' );
         }
         {
             var robot = state.get_robot(43);
-            expect_robot_position(robot, 2, 2, 'east', 10);
+            expect_robot_position(robot, 2, 2, 's', 10);
             expect_null( 'robot[43].name', robot.name );
             expect_null( 'robot[43].color', robot.color );
             expect_null( 'robot[43].status', robot.status );
@@ -429,7 +437,7 @@ var test_plynd_state = null;
             expect_not_null( 'plynd_robot', plynd_robot );
             expect_eq( 'plynd_robot[41].x', plynd_robot.x, 0 );
             expect_eq( 'plynd_robot[41].y', plynd_robot.y, 0 );
-            expect_eq( 'plynd_robot[41].o', plynd_robot.o, 3 );
+            expect_eq( 'plynd_robot[41].o', plynd_robot.o, 'n' );
             expect_eq( 'plynd_robot[41].p', plynd_robot.p, 10 );
             expect_eq( 'plynd_robot[41].h', plynd_robot.programs.join(), 'L,1,r,l,1,s,s,1,L,b' );
         }
@@ -439,7 +447,7 @@ var test_plynd_state = null;
             expect_not_null( 'plynd_robot', plynd_robot );
             expect_eq( 'plynd_robot[42].x', plynd_robot.x, 3 );
             expect_eq( 'plynd_robot[42].y', plynd_robot.y, 0 );
-            expect_eq( 'plynd_robot[42].o', plynd_robot.o, 3 );
+            expect_eq( 'plynd_robot[42].o', plynd_robot.o, 'n' );
             expect_eq( 'plynd_robot[42].p', plynd_robot.p, 10 );
             expect_eq( 'plynd_robot[42].h', plynd_robot.programs.join(), '1,r,2,l,r,2,l,b,2,1' );
         }
@@ -449,7 +457,7 @@ var test_plynd_state = null;
             expect_not_null( 'plynd_robot', plynd_robot );
             expect_eq( 'plynd_robot[43].x', plynd_robot.x, 2 );
             expect_eq( 'plynd_robot[43].y', plynd_robot.y, 2 );
-            expect_eq( 'plynd_robot[43].o', plynd_robot.o, 4 );
+            expect_eq( 'plynd_robot[43].o', plynd_robot.o, 'e' );
             expect_eq( 'plynd_robot[43].p', plynd_robot.p, 10 );
             expect_eq( 'plynd_robot[43].h', plynd_robot.programs.join(), '3,2,1,2,1,3,l,r,R,u' );
         }
