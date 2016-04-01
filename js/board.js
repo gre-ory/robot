@@ -724,6 +724,7 @@ Card.get = function( id ) {
 
 var min_points = 0;
 var max_points = 10;
+var move_length = 5;
 
 function Player( id ) {
     // public 
@@ -989,6 +990,31 @@ Player.prototype.get_move = function() {
 }
 
 Player.prototype.set_move = function( move ) {
+    // debug( 'player ' + this.id + ': set_move: ', move )
+    if ( is_null( move ) ) {
+        throw '[error] player ' + this.id + ': missing move!';
+    } 
+    if ( move.length > move_length ) {
+        throw '[error] player ' + this.id + ': too much card played!';
+    } 
+    if ( move.length < move_length ) {
+        throw '[error] player ' + this.id + ': not enough card card played!';
+    }
+    var indexes_already_played = [];
+    for ( var phase = 0 ; phase < move.length ; ++phase ) {
+        var hand_index = parseInt( move[ phase ] );
+        if ( ( 0 <= hand_index ) && ( hand_index < this.hand.length ) ) {
+            if ( indexes_already_played.indexOf( hand_index ) !== -1 ) {
+                throw '[error] player ' + this.id + ': card index already played! (' + hand_index + ')';
+            }
+            var card = this.hand[ hand_index ];
+            console.log( '[server] player ' + this.id + ': card "' + card + '" played for phase ' + phase + '.' );
+            indexes_already_played.push( hand_index );
+        }
+        else {
+            throw '[error] player ' + this.id + ': invalid card index! (' + move[phase] + ')';    
+        }
+    } 
     // TODO: validate move
     this.move = move;
 }
@@ -1342,8 +1368,14 @@ State.prototype.get_current_player = function() {
 // plynd
 
 function server_error( err ) {
-    console.log( '[server] exception: ' + err );
-    console.log( err.stack );
+    // console.log( '[server] exception: ' + err );
+    // if ( is_not_null( err.stack ) ) {
+    //     console.log( err.stack );
+    // }
+    debug( 'server_error', err )
+    if ( err.indexOf( '[error]' ) !== -1 ) {
+        return { code:403, data: err };
+    }
     return { code:403, data: "Internal error! ( " + err + " )" };    
 }
 
@@ -1373,7 +1405,8 @@ function server_set_move( plynd_metadata, plynd_state, request, success_fn, erro
     try {
         var state = new State( plynd_metadata, plynd_state );
         var player = state.get_current_player();
-        player.set_move( request.move );
+        var move = is_not_null( request ) && is_not_null( request.move ) ? request.move : null;
+        player.set_move( move );
         success_fn( state.dump() );
     }
     catch( err ) {

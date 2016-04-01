@@ -428,7 +428,54 @@ var test_plynd_state = null;
 }
 
 {
-    start_test( 'server set move' );
+    start_test( 'server set move: errors' );
+    test_metadata.ownPlayerID = '43';
+    {
+        var move_request = null;
+        server_set_move( test_metadata, test_plynd_state, move_request, forbidden_success_callback, function( err ) {
+            expect_eq( 'error-1', err.data, '[error] player 43: missing move!' );
+        } );
+    }
+    {
+        var move_request = { move_mistyped: [ 7, 9, 6, 8, 0 ] };
+        server_set_move( test_metadata, test_plynd_state, move_request, forbidden_success_callback, function( err ) {
+            expect_eq( 'error-2', err.data, '[error] player 43: missing move!' );
+        } );
+    }
+    {
+        var move_request = { move: [ 7, 9, 6, 8 ] };
+        server_set_move( test_metadata, test_plynd_state, move_request, forbidden_success_callback, function( err ) {
+            expect_eq( 'error-3', err.data, '[error] player 43: not enough card card played!' );
+        } );
+    }
+    {
+        var move_request = { move: [ 7, 9, 6, 8, 1, 0 ] };
+        server_set_move( test_metadata, test_plynd_state, move_request, forbidden_success_callback, function( err ) {
+            expect_eq( 'error-4', err.data, '[error] player 43: too much card played!' );
+        } );
+    }
+    {
+        var move_request = { move: [ 7, 9, 6, 9, 1 ] };
+        server_set_move( test_metadata, test_plynd_state, move_request, forbidden_success_callback, function( err ) {
+            expect_eq( 'error-5', err.data, '[error] player 43: card index already played! (9)' );
+        } );
+    }
+    {
+        var move_request = { move: [ 7, -1, 6, 8, 0 ] };
+        server_set_move( test_metadata, test_plynd_state, move_request, forbidden_success_callback, function( err ) {
+            expect_eq( 'error-6', err.data, '[error] player 43: invalid card index! (-1)' );
+        } );
+    }
+    {
+        var move_request = { move: [ 7, 1, 10, 8, 0 ] };
+        server_set_move( test_metadata, test_plynd_state, move_request, forbidden_success_callback, function( err ) {
+            expect_eq( 'error-7', err.data, '[error] player 43: invalid card index! (10)' );
+        } );
+    }
+}
+
+{
+    start_test( 'server set move: success' );
     {
         test_metadata.ownPlayerID = '43';
         var move_request = { move: [ 7, 9, 6, 8, 4 ] };
@@ -443,13 +490,13 @@ var test_plynd_state = null;
     }
     {
         test_metadata.ownPlayerID = '41';
-        var move_request = { move: [ 3, 6, 4, 3, 7 ] };
+        var move_request = { move: [ 3, 6, 4, 2, 7 ] };
         server_set_move( test_metadata, test_plynd_state, move_request, function( plynd_state ) {
             expect_not_null( 'plynd_state', plynd_state );
             test_plynd_state = plynd_state;
             var player = test_plynd_state.players[ test_metadata.ownPlayerID ];
             expect_not_null( 'player[' + test_metadata.ownPlayerID + ']', player );
-            expect_eq( 'players[' + test_metadata.ownPlayerID + '].move', player.m.join(), '3,6,4,3,7' );
+            expect_eq( 'players[' + test_metadata.ownPlayerID + '].move', player.m.join(), '3,6,4,2,7' );
         }, forbidden_error_callback );
         // debug( 'state.players[' + test_metadata.ownPlayerID + ']', test_plynd_state.players[ test_metadata.ownPlayerID ] );
     }
