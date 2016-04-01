@@ -770,7 +770,7 @@ Robot.prototype.initialize = function( cell ) {
     this.set_cell( cell );
     this.orientation.initialize();
     this.points = max_points;
-    this.hand = Program.select( this.points, false );
+    this._programs = Program.select( this.points, false );
     this._registers = [];
 }
 
@@ -828,8 +828,8 @@ Robot.prototype.load = function( plynd_player_metadata, plynd_robot_state ) {
         this.y = plynd_robot_state.y;
         this.orientation.set( plynd_robot_state.o );
         this.points = plynd_robot_state.p;
-        this.hand = plynd_robot_state.h || [];
-        this._registers = plynd_robot_state.r || [];
+        this._programs = plynd_robot_state.programs || [];
+        this._registers = plynd_robot_state.registers || [];
     }    
 }
 
@@ -852,11 +852,11 @@ Robot.prototype.dump = function() {
     if ( is_not_null( this.points ) ) {
         plynd_state.p = this.points;
     }
-    if ( is_not_null( this.hand ) && this.hand.length > 0 ) {
-        plynd_state.h = this.hand;
+    if ( is_not_null( this._programs ) && this._programs.length > 0 ) {
+        plynd_state.programs = this._programs;
     }
     if ( is_not_null( this._registers ) && this._registers.length > 0 ) {
-        plynd_state.r = this._registers;
+        plynd_state.registers = this._registers;
     }
     return plynd_state;
 }
@@ -989,14 +989,8 @@ Robot.prototype.toward_north = function() {
 
 // programs
 
-/*
-Robot.prototype.add_program = function( program ) {
-    this._programs.push( program );
-}
-*/
-
-Robot.prototype.get_hand = function() {
-    return this.hand;
+Robot.prototype.get_programs = function() {
+    return this._programs;
 }
 
 // registers
@@ -1028,12 +1022,10 @@ Robot.prototype.select_registers = function( registers ) {
     var registers_already_selected = [];
     for ( var phase = 0 ; phase < nb_phase; ++phase ) {
         var register = parseInt( registers[ phase ] );
-        if ( ( 0 <= register ) && ( register < this.hand.length ) ) {
+        if ( ( 0 <= register ) && ( register < this._programs.length ) ) {
             if ( registers_already_selected.indexOf( register ) !== -1 ) {
                 throw '[error] robot ' + this.id + ': register ' + register + ' already selected!';
             }
-            // var program = this.hand[ register ];
-            // console.log( '[server] robot ' + this.id + ': register ' + register + ' selected for phase ' + phase + '.' );
             registers_already_selected.push( register );
         }
         else {
@@ -1046,8 +1038,8 @@ Robot.prototype.select_registers = function( registers ) {
 Robot.prototype.activate_register = function( phase ) {
     if ( ( 0 <= phase ) && ( phase < this._registers.length ) ) {
         var register = this._registers[ phase ];
-        if ( ( 0 <= register ) && ( register < this.hand.length ) ) {
-            var program = this.hand[ register ];
+        if ( ( 0 <= register ) && ( register < this._programs.length ) ) {
+            var program = this._programs[ register ];
             console.log( '[server] activate: { phase: ' + phase + ', robot: ' + this.id + ', register: ' + register + ', program: ' + program + ' }' );
         }
         else {
@@ -1644,8 +1636,8 @@ if ( typeof Plynd !== 'undefined' ) {
 // TODO: use 1 letter for program and cell
 // TODO: implement register activation
 // DONE: change 'move' to 'register'
-// TODO: change 'hand' to 'programs'
-// TODO: change 'program' to 'program'
+// DONE: change 'hand' to 'programs'
+// DONE: change 'program' to 'program'
 // DONE: change 'player' to 'robot'
 // TODO: implement repair action
 // TODO: implement conveyor belt class

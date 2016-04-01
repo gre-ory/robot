@@ -419,7 +419,7 @@ random = new Random( 42 );
 var test_plynd_state = null;
 
 {
-    start_test( 'server initialize' );
+    start_test( 'server_initialize_state' );
     server_initialize_state( test_metadata, null, null, function( plynd_state ) {
         test_plynd_state = plynd_state;
         expect_not_null( 'plynd_state', plynd_state );
@@ -431,7 +431,7 @@ var test_plynd_state = null;
             expect_eq( 'plynd_robot[41].y', plynd_robot.y, 0 );
             expect_eq( 'plynd_robot[41].o', plynd_robot.o, 3 );
             expect_eq( 'plynd_robot[41].p', plynd_robot.p, 10 );
-            expect_eq( 'plynd_robot[41].h', plynd_robot.h.join(), 'L,1,r,l,1,s,s,1,L,b' );
+            expect_eq( 'plynd_robot[41].h', plynd_robot.programs.join(), 'L,1,r,l,1,s,s,1,L,b' );
         }
         {
             assert_true( '42 in robots', '42' in plynd_state.robots );
@@ -441,7 +441,7 @@ var test_plynd_state = null;
             expect_eq( 'plynd_robot[42].y', plynd_robot.y, 0 );
             expect_eq( 'plynd_robot[42].o', plynd_robot.o, 3 );
             expect_eq( 'plynd_robot[42].p', plynd_robot.p, 10 );
-            expect_eq( 'plynd_robot[42].h', plynd_robot.h.join(), '1,r,2,l,r,2,l,b,2,1' );
+            expect_eq( 'plynd_robot[42].h', plynd_robot.programs.join(), '1,r,2,l,r,2,l,b,2,1' );
         }
         {
             assert_true( '43 in robots', '43' in plynd_state.robots );
@@ -451,7 +451,7 @@ var test_plynd_state = null;
             expect_eq( 'plynd_robot[43].y', plynd_robot.y, 2 );
             expect_eq( 'plynd_robot[43].o', plynd_robot.o, 4 );
             expect_eq( 'plynd_robot[43].p', plynd_robot.p, 10 );
-            expect_eq( 'plynd_robot[43].h', plynd_robot.h.join(), '3,2,1,2,1,3,l,r,R,u' );
+            expect_eq( 'plynd_robot[43].h', plynd_robot.programs.join(), '3,2,1,2,1,3,l,r,R,u' );
         }
     }, forbidden_error_callback );
 }
@@ -520,7 +520,7 @@ var test_plynd_state = null;
             test_plynd_state = new_plynd_state;
             var robot = test_plynd_state.robots[ test_metadata.ownPlayerID ];
             expect_not_null( 'robot[' + test_metadata.ownPlayerID + ']', robot );
-            expect_eq( 'robots[' + test_metadata.ownPlayerID + '].registers', robot.r.join(), '7,9,6,8,4' );
+            expect_eq( 'robots[' + test_metadata.ownPlayerID + '].registers', robot.registers.join(), '7,9,6,8,4' );
         }, forbidden_error_callback );
         // debug( 'state.robots[' + test_metadata.ownPlayerID + ']', test_plynd_state.robots[ test_metadata.ownPlayerID ] );
     }
@@ -532,7 +532,7 @@ var test_plynd_state = null;
             test_plynd_state = new_plynd_state;
             var robot = test_plynd_state.robots[ test_metadata.ownPlayerID ];
             expect_not_null( 'robot[' + test_metadata.ownPlayerID + ']', robot );
-            expect_eq( 'robots[' + test_metadata.ownPlayerID + '].registers', robot.r.join(), '3,6,4,2,7' );
+            expect_eq( 'robots[' + test_metadata.ownPlayerID + '].registers', robot.registers.join(), '3,6,4,2,7' );
         }, forbidden_error_callback );
         // debug( 'state.robots[' + test_metadata.ownPlayerID + ']', test_plynd_state.robots[ test_metadata.ownPlayerID ] );
     }
@@ -544,7 +544,7 @@ var test_plynd_state = null;
             test_plynd_state = new_plynd_state;
             var robot = test_plynd_state.robots[ test_metadata.ownPlayerID ];
             expect_not_null( 'robot[' + test_metadata.ownPlayerID + ']', robot );
-            expect_eq( 'robots[' + test_metadata.ownPlayerID + '].registers', robot.r.join(), '6,4,5,1,3' );
+            expect_eq( 'robots[' + test_metadata.ownPlayerID + '].registers', robot.registers.join(), '6,4,5,1,3' );
         }, forbidden_error_callback );
         // debug( 'state.robots[' + test_metadata.ownPlayerID + ']', test_plynd_state.robots[ test_metadata.ownPlayerID ] );
     }
