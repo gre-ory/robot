@@ -64,21 +64,21 @@ function expect_eq( msg, computed, expected, throw_error ) {
     return expect_test( msg + ': ' + computed + ' == ' + expected, ( computed == expected ), throw_error );
 }
 
-function expect_player_position( player, x, y, o, p ) {
+function expect_robot_position( robot, x, y, o, p ) {
     var result = true;
-    result &= expect_eq( 'player_' + player.id + '.x', player.x, x );
-    result &= expect_eq( 'player_' + player.id + '.y', player.y, y );
-    if ( player.orientation.is_set() ) {
-        result &= expect_eq( 'player_' + player.id + '.o', player.orientation.flush(), o );
+    result &= expect_eq( 'robot_' + robot.id + '.x', robot.x, x );
+    result &= expect_eq( 'robot_' + robot.id + '.y', robot.y, y );
+    if ( robot.orientation.is_set() ) {
+        result &= expect_eq( 'robot_' + robot.id + '.o', robot.orientation.flush(), o );
     }
     else if ( is_not_null( o ) ) {
-        result &= expect_eq( 'player_' + player.id + '.o', null, o );
+        result &= expect_eq( 'robot_' + robot.id + '.o', null, o );
     }
     if ( p !== undefined ) {
-        result &= expect_eq( 'player_' + player.id + '.p', player.points, p );
+        result &= expect_eq( 'robot_' + robot.id + '.p', robot.points, p );
     }
     if ( !result ) {
-        console.log( '[test] ----- [x] player: ' + player.flush() );
+        console.log( '[test] ----- [x] robot: ' + robot.flush() );
     }
     return result;
 }
@@ -121,7 +121,7 @@ var test_metadata = {
     players: {
         "41": {
             "playerID": 41,
-            "playerName": "player 41",
+            "playerName": "robot 41",
             "playerColor": "#a73338",
             "status": "has_turn",
             "user": {
@@ -138,7 +138,7 @@ var test_metadata = {
         },
         "42": {
             "playerID": 42,
-            "playerName": "player 42",
+            "playerName": "robot 42",
             "playerColor": "#538f5b",
             "status": "has_turn",
             "user": {
@@ -156,9 +156,9 @@ var test_metadata = {
     }
 };
 
-expect_eq( 'test_metadata.boardID', test_metadata.boardID, 'test_board' );
+assert_eq( 'test_metadata.boardID', test_metadata.boardID, 'test_board' );
 var test_board = load_board_from_id( test_metadata.boardID );
-expect_not_null( 'test_board', test_board );
+assert_not_null( 'test_board', test_board );
 
 // //////////////////////////////////////////////////
 //  random
@@ -206,60 +206,60 @@ random = new Random( 42 );
     var start_cells = board.get_start_cells();
     assert_not_null( 'start_cells', start_cells );
     expect_eq( 'start_cells.length', start_cells.length, 0 );
-    var player = new Player( 42 );
-    expect_eq( 'player.id', player.id, 42 );
-    expect_null( 'player.cell', player._cell );
-    player.initialize( cell );
-    expect_not_null( 'player.cell', player._cell );
-    expect_player_position(player, 0, 0, 'east');
-    player.move_forward();
-    expect_player_position(player, 1, 0, 'east');
-    player.move_backward();
-    expect_player_position(player, 0, 0, 'east');
-    player.slide_right();
-    expect_player_position(player, 0, 1, 'east');
-    player.slide_left();
-    expect_player_position(player, 0, 0, 'east');
-    player.turn_right();
-    expect_player_position(player, 0, 0, 'south');
-    player.move_forward();
-    expect_player_position(player, 0, 1, 'south');
-    player.move_backward();
-    expect_player_position(player, 0, 0, 'south');
-    player.slide_left();
-    expect_player_position(player, 1, 0, 'south');
-    player.slide_right();
-    expect_player_position(player, 0, 0, 'south');
-    player.turn_right();
-    expect_player_position(player, 0, 0, 'west');
-    player.move_backward();
-    expect_player_position(player, 1, 0, 'west');
-    player.move_forward();
-    expect_player_position(player, 0, 0, 'west');
-    player.slide_left();
-    expect_player_position(player, 0, 1, 'west');
-    player.slide_right();
-    expect_player_position(player, 0, 0, 'west');
-    player.turn_right();
-    expect_player_position(player, 0, 0, 'north');
-    player.move_backward();
-    expect_player_position(player, 0, 1, 'north');
-    player.move_forward();
-    expect_player_position(player, 0, 0, 'north');
-    player.slide_right();
-    expect_player_position(player, 1, 0, 'north');
-    player.slide_left();
-    expect_player_position(player, 0, 0, 'north');
-    player.turn_left();
-    expect_player_position(player, 0, 0, 'west');
-    player.uturn();
-    expect_player_position(player, 0, 0, 'east');
-    player.uturn();
-    expect_player_position(player, 0, 0, 'west');
-    player.turn_left();
-    expect_player_position(player, 0, 0, 'south');
-    player.turn_left();
-    expect_player_position(player, 0, 0, 'east');
+    var robot = new Robot( 42 );
+    expect_eq( 'robot.id', robot.id, 42 );
+    expect_null( 'robot.cell', robot._cell );
+    robot.initialize( cell );
+    expect_not_null( 'robot.cell', robot._cell );
+    expect_robot_position(robot, 0, 0, 'east');
+    robot.move_forward();
+    expect_robot_position(robot, 1, 0, 'east');
+    robot.move_backward();
+    expect_robot_position(robot, 0, 0, 'east');
+    robot.slide_right();
+    expect_robot_position(robot, 0, 1, 'east');
+    robot.slide_left();
+    expect_robot_position(robot, 0, 0, 'east');
+    robot.turn_right();
+    expect_robot_position(robot, 0, 0, 'south');
+    robot.move_forward();
+    expect_robot_position(robot, 0, 1, 'south');
+    robot.move_backward();
+    expect_robot_position(robot, 0, 0, 'south');
+    robot.slide_left();
+    expect_robot_position(robot, 1, 0, 'south');
+    robot.slide_right();
+    expect_robot_position(robot, 0, 0, 'south');
+    robot.turn_right();
+    expect_robot_position(robot, 0, 0, 'west');
+    robot.move_backward();
+    expect_robot_position(robot, 1, 0, 'west');
+    robot.move_forward();
+    expect_robot_position(robot, 0, 0, 'west');
+    robot.slide_left();
+    expect_robot_position(robot, 0, 1, 'west');
+    robot.slide_right();
+    expect_robot_position(robot, 0, 0, 'west');
+    robot.turn_right();
+    expect_robot_position(robot, 0, 0, 'north');
+    robot.move_backward();
+    expect_robot_position(robot, 0, 1, 'north');
+    robot.move_forward();
+    expect_robot_position(robot, 0, 0, 'north');
+    robot.slide_right();
+    expect_robot_position(robot, 1, 0, 'north');
+    robot.slide_left();
+    expect_robot_position(robot, 0, 0, 'north');
+    robot.turn_left();
+    expect_robot_position(robot, 0, 0, 'west');
+    robot.uturn();
+    expect_robot_position(robot, 0, 0, 'east');
+    robot.uturn();
+    expect_robot_position(robot, 0, 0, 'west');
+    robot.turn_left();
+    expect_robot_position(robot, 0, 0, 'south');
+    robot.turn_left();
+    expect_robot_position(robot, 0, 0, 'east');
 }
 
 {
@@ -267,94 +267,94 @@ random = new Random( 42 );
     var board = test_board;
     var cell = board.get_cell( 0, 0 );
     expect_not_null( 'cell', cell );
-    var player = new Player( 42 );
-    expect_eq( 'player.id', player.id, 42 );
-    expect_null( 'player.cell', player._cell );
-    player.initialize( cell );
-    expect_not_null( 'player.cell', player._cell );
-    expect_player_position(player, 0, 0, 'south', 10);
+    var robot = new Robot( 42 );
+    expect_eq( 'robot.id', robot.id, 42 );
+    expect_null( 'robot.cell', robot._cell );
+    robot.initialize( cell );
+    expect_not_null( 'robot.cell', robot._cell );
+    expect_robot_position(robot, 0, 0, 'south', 10);
     // go hit the wall
-    player.move_forward();
-    player.turn_left();
-    player.move_forward();
-    expect_player_position(player, 1, 1, 'east', 10);
-    player.move_forward();
-    expect_player_position(player, 1, 1, 'east', 9);
-    player.move_forward();
-    expect_player_position(player, 1, 1, 'east', 8);
-    player.move_forward();
-    expect_player_position(player, 1, 1, 'east', 7);
-    player.move_backward();
-    expect_player_position(player, 0, 1, 'east', 7);
-    player.move_backward();
-    expect_player_position(player, null, null, null, 0);
+    robot.move_forward();
+    robot.turn_left();
+    robot.move_forward();
+    expect_robot_position(robot, 1, 1, 'east', 10);
+    robot.move_forward();
+    expect_robot_position(robot, 1, 1, 'east', 9);
+    robot.move_forward();
+    expect_robot_position(robot, 1, 1, 'east', 8);
+    robot.move_forward();
+    expect_robot_position(robot, 1, 1, 'east', 7);
+    robot.move_backward();
+    expect_robot_position(robot, 0, 1, 'east', 7);
+    robot.move_backward();
+    expect_robot_position(robot, null, null, null, 0);
 }
 
 {
     start_test( 'interaction' );
     var board = test_board; 
-    var player = new Player( 42 );
-    player.initialize( board.get_cell( 0, 0 ) );
-    expect_player_position(player, 0, 0, 'south', 10);
-    var player_2 = new Player( 2 );
-    player_2.initialize( board.get_cell( 1, 1 ) );
-    expect_player_position(player_2, 1, 1, 'north', 10);
-    var player_3 = new Player( 3 );
-    player_3.initialize( board.get_cell( 1, 2 ) );
-    expect_player_position(player_3, 1, 2, 'west', 10);
-    var player_4 = new Player( 4 );
-    player_4.initialize( board.get_cell( 2, 2 ) );
-    expect_player_position(player_4, 2, 2, 'west', 10);
-    player.move_forward();
-    player.turn_left();
-    player.move_forward();
-    expect_player_position(player, 0, 1, 'east', 9);
-    expect_player_position(player_2, 1, 1, 'north', 9);
-    expect_player_position(player_3, 1, 2, 'west', 10);
-    expect_player_position(player_4, 2, 2, 'west', 10);
-    player.slide_right();
-    player.move_forward();
-    expect_player_position(player, 0, 2, 'east', 8);
-    expect_player_position(player_2, 1, 1, 'north', 9);
-    expect_player_position(player_3, 1, 2, 'west', 9);
-    expect_player_position(player_4, 2, 2, 'west', 9);
-    player.slide_left();
-    player.slide_left();
-    player.move_forward();
-    player.turn_right();
-    player.move_forward();
-    expect_player_position(player, 1, 1, 'south', 8);
-    expect_player_position(player_2, 1, 2, 'north', 9);
-    expect_player_position(player_3, null, null, null, 0);
-    expect_player_position(player_4, 2, 2, 'west', 9);
+    var robot = new Robot( 42 );
+    robot.initialize( board.get_cell( 0, 0 ) );
+    expect_robot_position(robot, 0, 0, 'south', 10);
+    var robot_2 = new Robot( 2 );
+    robot_2.initialize( board.get_cell( 1, 1 ) );
+    expect_robot_position(robot_2, 1, 1, 'north', 10);
+    var robot_3 = new Robot( 3 );
+    robot_3.initialize( board.get_cell( 1, 2 ) );
+    expect_robot_position(robot_3, 1, 2, 'west', 10);
+    var robot_4 = new Robot( 4 );
+    robot_4.initialize( board.get_cell( 2, 2 ) );
+    expect_robot_position(robot_4, 2, 2, 'west', 10);
+    robot.move_forward();
+    robot.turn_left();
+    robot.move_forward();
+    expect_robot_position(robot, 0, 1, 'east', 9);
+    expect_robot_position(robot_2, 1, 1, 'north', 9);
+    expect_robot_position(robot_3, 1, 2, 'west', 10);
+    expect_robot_position(robot_4, 2, 2, 'west', 10);
+    robot.slide_right();
+    robot.move_forward();
+    expect_robot_position(robot, 0, 2, 'east', 8);
+    expect_robot_position(robot_2, 1, 1, 'north', 9);
+    expect_robot_position(robot_3, 1, 2, 'west', 9);
+    expect_robot_position(robot_4, 2, 2, 'west', 9);
+    robot.slide_left();
+    robot.slide_left();
+    robot.move_forward();
+    robot.turn_right();
+    robot.move_forward();
+    expect_robot_position(robot, 1, 1, 'south', 8);
+    expect_robot_position(robot_2, 1, 2, 'north', 9);
+    expect_robot_position(robot_3, null, null, null, 0);
+    expect_robot_position(robot_4, 2, 2, 'west', 9);
 }
 
 {
     start_test( 'shoot' );
     var board = test_board;
-    var player = new Player( 42 );
-    player.initialize( board.get_cell( 0, 0 ) );
-    expect_player_position(player, 0, 0, 'east', 10);
-    var player_2 = new Player( 2 );
-    player_2.initialize( board.get_cell( 3, 0 ) );
-    expect_player_position(player_2, 3, 0, 'east', 10);
-    player.shoot();
-    player_2.uturn();
-    player_2.shoot();
-    expect_player_position(player, 0, 0, 'east', 9);
-    expect_player_position(player_2, 3, 0, 'west', 9);
-    player.slide_right();
-    player_2.slide_left();
-    player.shoot();
-    player_2.shoot();
-    expect_player_position(player, 0, 1, 'east', 9);
-    expect_player_position(player_2, 3, 1, 'west', 9);
-    player.turn_left();
-    player_2.turn_left();
-    player.shoot();
-    player_2.shoot();
-    expect_player_position(player, 0, 1, 'north', 9);
-    expect_player_position(player_2, 3, 1, 'south', 9);
+    var robot = new Robot( 42 );
+    robot.initialize( board.get_cell( 0, 0 ) );
+    expect_robot_position(robot, 0, 0, 'east', 10);
+    var robot_2 = new Robot( 2 );
+    robot_2.initialize( board.get_cell( 3, 0 ) );
+    expect_robot_position(robot_2, 3, 0, 'east', 10);
+    robot.shoot();
+    robot_2.uturn();
+    robot_2.shoot();
+    expect_robot_position(robot, 0, 0, 'east', 9);
+    expect_robot_position(robot_2, 3, 0, 'west', 9);
+    robot.slide_right();
+    robot_2.slide_left();
+    robot.shoot();
+    robot_2.shoot();
+    expect_robot_position(robot, 0, 1, 'east', 9);
+    expect_robot_position(robot_2, 3, 1, 'west', 9);
+    robot.turn_left();
+    robot_2.turn_left();
+    robot.shoot();
+    robot_2.shoot();
+    expect_robot_position(robot, 0, 1, 'north', 9);
+    expect_robot_position(robot_2, 3, 1, 'south', 9);
 }
 
 {
@@ -364,19 +364,55 @@ random = new Random( 42 );
     state.initialize();
     expect_not_null( 'board', state.get_board() );
     {
-        expect_player_position(state.get_player(41), 3, 0, 'north', 10);
-        expect_player_position(state.get_player(42), 0, 0, 'north', 10);
-        expect_player_position(state.get_player(43), 2, 2, 'east', 10);
+        {
+            var robot = state.get_robot(41);
+            expect_robot_position(robot, 3, 0, 'north', 10);
+            expect_eq( 'robot[41].name', robot.name, 'robot 41' );
+            expect_eq( 'robot[41].color', robot.color, '#a73338' );
+            expect_eq( 'robot[41].status', robot.status, 'has_turn' );
+        }
+        {
+            var robot = state.get_robot(42);
+            expect_robot_position(robot, 0, 0, 'north', 10);
+            expect_eq( 'robot[42].name', robot.name, 'robot 42' );
+            expect_eq( 'robot[42].color', robot.color, '#538f5b' );
+            expect_eq( 'robot[42].status', robot.status, 'has_turn' );
+        }
+        {
+            var robot = state.get_robot(43);
+            expect_robot_position(robot, 2, 2, 'east', 10);
+            expect_null( 'robot[43].name', robot.name );
+            expect_null( 'robot[43].color', robot.color );
+            expect_null( 'robot[43].status', robot.status );
+        }
     }
     {
         plynd_state = state.dump();
-        plynd_state.players['42'].p = 42;
+        plynd_state.robots['42'].p = 42;
         state = new State( test_metadata, plynd_state );
     }
     {
-        expect_player_position(state.get_player(41), 3, 0, 'north', 10);
-        expect_player_position(state.get_player(42), 0, 0, 'north', 42);
-        expect_player_position(state.get_player(43), 2, 2, 'east', 10);
+        {
+            var robot = state.get_robot(41);
+            expect_robot_position(robot, 3, 0, 'north', 10);
+            expect_eq( 'robot[41].name', robot.name, 'robot 41' );
+            expect_eq( 'robot[41].color', robot.color, '#a73338' );
+            expect_eq( 'robot[41].status', robot.status, 'has_turn' );
+        }
+        {
+            var robot = state.get_robot(42);
+            expect_robot_position(robot, 0, 0, 'north', 42);
+            expect_eq( 'robot[42].name', robot.name, 'robot 42' );
+            expect_eq( 'robot[42].color', robot.color, '#538f5b' );
+            expect_eq( 'robot[42].status', robot.status, 'has_turn' );
+        }
+        {
+            var robot = state.get_robot(43);
+            expect_robot_position(robot, 2, 2, 'east', 10);
+            expect_null( 'robot[43].name', robot.name );
+            expect_null( 'robot[43].color', robot.color );
+            expect_null( 'robot[43].status', robot.status );
+        }
     }
 }
 
@@ -388,34 +424,34 @@ var test_plynd_state = null;
         test_plynd_state = plynd_state;
         expect_not_null( 'plynd_state', plynd_state );
         {
-            assert_true( '41 in players', '41' in plynd_state.players );
-            var plynd_player = plynd_state.players[ '41' ];
-            expect_not_null( 'plynd_player', plynd_player );
-            expect_eq( 'plynd_player[41].x', plynd_player.x, 0 );
-            expect_eq( 'plynd_player[41].y', plynd_player.y, 0 );
-            expect_eq( 'plynd_player[41].o', plynd_player.o, 3 );
-            expect_eq( 'plynd_player[41].p', plynd_player.p, 10 );
-            expect_eq( 'plynd_player[41].h', plynd_player.h.join(), 'L,1,r,l,1,s,s,1,L,b' );
+            assert_true( '41 in robots', '41' in plynd_state.robots );
+            var plynd_robot = plynd_state.robots[ '41' ];
+            expect_not_null( 'plynd_robot', plynd_robot );
+            expect_eq( 'plynd_robot[41].x', plynd_robot.x, 0 );
+            expect_eq( 'plynd_robot[41].y', plynd_robot.y, 0 );
+            expect_eq( 'plynd_robot[41].o', plynd_robot.o, 3 );
+            expect_eq( 'plynd_robot[41].p', plynd_robot.p, 10 );
+            expect_eq( 'plynd_robot[41].h', plynd_robot.h.join(), 'L,1,r,l,1,s,s,1,L,b' );
         }
         {
-            assert_true( '42 in players', '42' in plynd_state.players );
-            var plynd_player = plynd_state.players[ '42' ];
-            expect_not_null( 'plynd_player', plynd_player );
-            expect_eq( 'plynd_player[42].x', plynd_player.x, 3 );
-            expect_eq( 'plynd_player[42].y', plynd_player.y, 0 );
-            expect_eq( 'plynd_player[42].o', plynd_player.o, 3 );
-            expect_eq( 'plynd_player[42].p', plynd_player.p, 10 );
-            expect_eq( 'plynd_player[42].h', plynd_player.h.join(), '1,r,2,l,r,2,l,b,2,1' );
+            assert_true( '42 in robots', '42' in plynd_state.robots );
+            var plynd_robot = plynd_state.robots[ '42' ];
+            expect_not_null( 'plynd_robot', plynd_robot );
+            expect_eq( 'plynd_robot[42].x', plynd_robot.x, 3 );
+            expect_eq( 'plynd_robot[42].y', plynd_robot.y, 0 );
+            expect_eq( 'plynd_robot[42].o', plynd_robot.o, 3 );
+            expect_eq( 'plynd_robot[42].p', plynd_robot.p, 10 );
+            expect_eq( 'plynd_robot[42].h', plynd_robot.h.join(), '1,r,2,l,r,2,l,b,2,1' );
         }
         {
-            assert_true( '43 in players', '43' in plynd_state.players );
-            var plynd_player = plynd_state.players[ '43' ];
-            expect_not_null( 'plynd_player', plynd_player );
-            expect_eq( 'plynd_player[43].x', plynd_player.x, 2 );
-            expect_eq( 'plynd_player[43].y', plynd_player.y, 2 );
-            expect_eq( 'plynd_player[43].o', plynd_player.o, 4 );
-            expect_eq( 'plynd_player[43].p', plynd_player.p, 10 );
-            expect_eq( 'plynd_player[43].h', plynd_player.h.join(), '3,2,1,2,1,3,l,r,R,u' );
+            assert_true( '43 in robots', '43' in plynd_state.robots );
+            var plynd_robot = plynd_state.robots[ '43' ];
+            expect_not_null( 'plynd_robot', plynd_robot );
+            expect_eq( 'plynd_robot[43].x', plynd_robot.x, 2 );
+            expect_eq( 'plynd_robot[43].y', plynd_robot.y, 2 );
+            expect_eq( 'plynd_robot[43].o', plynd_robot.o, 4 );
+            expect_eq( 'plynd_robot[43].p', plynd_robot.p, 10 );
+            expect_eq( 'plynd_robot[43].h', plynd_robot.h.join(), '3,2,1,2,1,3,l,r,R,u' );
         }
     }, forbidden_error_callback );
 }
@@ -433,43 +469,43 @@ var test_plynd_state = null;
     {
         var request_registers = null;
         server_select_registers( test_metadata, test_plynd_state, request_registers, forbidden_success_callback, function( new_plynd_state, err ) {
-            expect_eq( 'error-1', err.data, '[error] player 43: missing registers!' );
+            expect_eq( 'error-1', err.data, '[error] robot 43: missing registers!' );
         } );
     }
     {
         var request_registers = { registers_mistyped: [ 7, 9, 6, 8, 0 ] };
         server_select_registers( test_metadata, test_plynd_state, request_registers, forbidden_success_callback, function( new_plynd_state, err ) {
-            expect_eq( 'error-2', err.data, '[error] player 43: missing registers!' );
+            expect_eq( 'error-2', err.data, '[error] robot 43: missing registers!' );
         } );
     }
     {
         var request_registers = { registers: [ 7, 9, 6, 8 ] };
         server_select_registers( test_metadata, test_plynd_state, request_registers, forbidden_success_callback, function( new_plynd_state, err ) {
-            expect_eq( 'error-3', err.data, '[error] player 43: not enough registers!' );
+            expect_eq( 'error-3', err.data, '[error] robot 43: not enough registers!' );
         } );
     }
     {
         var request_registers = { registers: [ 7, 9, 6, 8, 1, 0 ] };
         server_select_registers( test_metadata, test_plynd_state, request_registers, forbidden_success_callback, function( new_plynd_state, err ) {
-            expect_eq( 'error-4', err.data, '[error] player 43: too much registers!' );
+            expect_eq( 'error-4', err.data, '[error] robot 43: too much registers!' );
         } );
     }
     {
         var request_registers = { registers: [ 7, 9, 6, 9, 1 ] };
         server_select_registers( test_metadata, test_plynd_state, request_registers, forbidden_success_callback, function( new_plynd_state, err ) {
-            expect_eq( 'error-5', err.data, '[error] player 43: register 9 already selected!' );
+            expect_eq( 'error-5', err.data, '[error] robot 43: register 9 already selected!' );
         } );
     }
     {
         var request_registers = { registers: [ 7, -1, 6, 8, 0 ] };
         server_select_registers( test_metadata, test_plynd_state, request_registers, forbidden_success_callback, function( new_plynd_state, err ) {
-            expect_eq( 'error-6', err.data, '[error] player 43: invalid register: -1!' );
+            expect_eq( 'error-6', err.data, '[error] robot 43: invalid register: -1!' );
         } );
     }
     {
         var request_registers = { registers: [ 7, 1, 10, 8, 0 ] };
         server_select_registers( test_metadata, test_plynd_state, request_registers, forbidden_success_callback, function( new_plynd_state, err ) {
-            expect_eq( 'error-7', err.data, '[error] player 43: invalid register: 10!' );
+            expect_eq( 'error-7', err.data, '[error] robot 43: invalid register: 10!' );
         } );
     }
 }
@@ -482,11 +518,11 @@ var test_plynd_state = null;
         server_select_registers( test_metadata, test_plynd_state, request_registers, function( new_plynd_state, response ) {
             expect_not_null( 'new_plynd_state', new_plynd_state );
             test_plynd_state = new_plynd_state;
-            var player = test_plynd_state.players[ test_metadata.ownPlayerID ];
-            expect_not_null( 'player[' + test_metadata.ownPlayerID + ']', player );
-            expect_eq( 'players[' + test_metadata.ownPlayerID + '].registers', player.r.join(), '7,9,6,8,4' );
+            var robot = test_plynd_state.robots[ test_metadata.ownPlayerID ];
+            expect_not_null( 'robot[' + test_metadata.ownPlayerID + ']', robot );
+            expect_eq( 'robots[' + test_metadata.ownPlayerID + '].registers', robot.r.join(), '7,9,6,8,4' );
         }, forbidden_error_callback );
-        // debug( 'state.players[' + test_metadata.ownPlayerID + ']', test_plynd_state.players[ test_metadata.ownPlayerID ] );
+        // debug( 'state.robots[' + test_metadata.ownPlayerID + ']', test_plynd_state.robots[ test_metadata.ownPlayerID ] );
     }
     {
         test_metadata.ownPlayerID = '41';
@@ -494,11 +530,11 @@ var test_plynd_state = null;
         server_select_registers( test_metadata, test_plynd_state, request_registers, function( new_plynd_state, response ) {
             expect_not_null( 'new_plynd_state', new_plynd_state );
             test_plynd_state = new_plynd_state;
-            var player = test_plynd_state.players[ test_metadata.ownPlayerID ];
-            expect_not_null( 'player[' + test_metadata.ownPlayerID + ']', player );
-            expect_eq( 'players[' + test_metadata.ownPlayerID + '].registers', player.r.join(), '3,6,4,2,7' );
+            var robot = test_plynd_state.robots[ test_metadata.ownPlayerID ];
+            expect_not_null( 'robot[' + test_metadata.ownPlayerID + ']', robot );
+            expect_eq( 'robots[' + test_metadata.ownPlayerID + '].registers', robot.r.join(), '3,6,4,2,7' );
         }, forbidden_error_callback );
-        // debug( 'state.players[' + test_metadata.ownPlayerID + ']', test_plynd_state.players[ test_metadata.ownPlayerID ] );
+        // debug( 'state.robots[' + test_metadata.ownPlayerID + ']', test_plynd_state.robots[ test_metadata.ownPlayerID ] );
     }
     {
         test_metadata.ownPlayerID = '42';
@@ -506,13 +542,13 @@ var test_plynd_state = null;
         server_select_registers( test_metadata, test_plynd_state, request_registers, function( new_plynd_state, response ) {
             expect_not_null( 'new_plynd_state', new_plynd_state );
             test_plynd_state = new_plynd_state;
-            var player = test_plynd_state.players[ test_metadata.ownPlayerID ];
-            expect_not_null( 'player[' + test_metadata.ownPlayerID + ']', player );
-            expect_eq( 'players[' + test_metadata.ownPlayerID + '].registers', player.r.join(), '6,4,5,1,3' );
+            var robot = test_plynd_state.robots[ test_metadata.ownPlayerID ];
+            expect_not_null( 'robot[' + test_metadata.ownPlayerID + ']', robot );
+            expect_eq( 'robots[' + test_metadata.ownPlayerID + '].registers', robot.r.join(), '6,4,5,1,3' );
         }, forbidden_error_callback );
-        // debug( 'state.players[' + test_metadata.ownPlayerID + ']', test_plynd_state.players[ test_metadata.ownPlayerID ] );
+        // debug( 'state.robots[' + test_metadata.ownPlayerID + ']', test_plynd_state.robots[ test_metadata.ownPlayerID ] );
     }
-    // debug( 'state.players', test_plynd_state.players );
+    // debug( 'state.robots', test_plynd_state.robots );
 }
 
 test_report();

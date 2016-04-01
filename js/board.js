@@ -445,7 +445,7 @@ function Cell( board, x, y ) {
     this.y = y;
     // private
     this._board = board;
-    this._player = null;
+    this._robot = null;
     // this._step
     // this._start
     // this._end
@@ -481,20 +481,20 @@ Cell.prototype.flush = function() {
     return out;
 }
 
-// player 
+// robot 
 
-Cell.prototype.unset_player = function() {
-    this._player = null;
+Cell.prototype.unset_robot = function() {
+    this._robot = null;
 }
 
-Cell.prototype.set_player = function( player ) {
-    if ( is_not_null( player ) ) {
-        this._player = player;
+Cell.prototype.set_robot = function( robot ) {
+    if ( is_not_null( robot ) ) {
+        this._robot = robot;
     }    
 }
 
-Cell.prototype.get_player = function() {
-    return this._player;    
+Cell.prototype.get_robot = function() {
+    return this._robot;    
 }
 
 // step
@@ -656,30 +656,30 @@ function Card( id, weight, play_fn ) {
     this.play_fn = play_fn;
 }
 
-Card.prototype.play = function( state, player ) {
-    console.log( '[server] player ' + player.id + ' plays card ' + this.id + '...' );
+Card.prototype.play = function( state, robot ) {
+    console.log( '[server] robot ' + robot.id + ' plays card ' + this.id + '...' );
     if ( is_null( this.play_fn ) ) {
-        throw '[error] player ' + player.id + ': invalid card!'; 
+        throw '[error] robot ' + robot.id + ': invalid card!'; 
     }
-    this.play_fn.apply( player, [state] );
+    this.play_fn.apply( robot, [state] );
 } 
 
 // cards
 
 var card_repair_id = 'r';
 var all_cards = [
-    new Card( '3',  6, Player.prototype.move_3_forward ),
-    new Card( '2', 12, Player.prototype.move_2_forward ),
-    new Card( '1', 18, Player.prototype.move_forward ),
-    new Card( 'b',  6, Player.prototype.move_backward ),
-    new Card( 'r', 18, Player.prototype.turn_right ),
-    new Card( 'l', 18, Player.prototype.turn_left ),
-    new Card( 'u',  6, Player.prototype.uturn ),
-    new Card( 'R',  6, Player.prototype.slide_right ),
-    new Card( 'L',  6, Player.prototype.slide_left ),
-    new Card( 's', 12, Player.prototype.shoot ),
-    new Card( 'S',  6, Player.prototype.shoot_2 ),
-    new Card( 'r', 12, Player.prototype.repair )
+    new Card( '3',  6, Robot.prototype.move_3_forward ),
+    new Card( '2', 12, Robot.prototype.move_2_forward ),
+    new Card( '1', 18, Robot.prototype.move_forward ),
+    new Card( 'b',  6, Robot.prototype.move_backward ),
+    new Card( 'r', 18, Robot.prototype.turn_right ),
+    new Card( 'l', 18, Robot.prototype.turn_left ),
+    new Card( 'u',  6, Robot.prototype.uturn ),
+    new Card( 'R',  6, Robot.prototype.slide_right ),
+    new Card( 'L',  6, Robot.prototype.slide_left ),
+    new Card( 's', 12, Robot.prototype.shoot ),
+    new Card( 'S',  6, Robot.prototype.shoot_2 ),
+    new Card( 'r', 12, Robot.prototype.repair )
 ];
 
 // deal
@@ -735,13 +735,13 @@ Card.get = function( id ) {
 }
 
 // //////////////////////////////////////////////////
-// Player
+// Robot
 
 var min_points = 0;
 var max_points = 10;
 var nb_phase = 5;
 
-function Player( id ) {
+function Robot( id ) {
     // public 
     this.id = id;
     this.orientation = new Orientation();
@@ -766,7 +766,7 @@ function Player( id ) {
 
 // initialize
 
-Player.prototype.initialize = function( cell ) {
+Robot.prototype.initialize = function( cell ) {
     this.set_cell( cell );
     this.orientation.initialize();
     this.points = max_points;
@@ -776,7 +776,7 @@ Player.prototype.initialize = function( cell ) {
 
 // load
 
-Player.prototype.load = function( plynd_metadata, plynd_state ) {
+Robot.prototype.load = function( plynd_player_metadata, plynd_robot_state ) {
     
     // metadata
 
@@ -800,13 +800,13 @@ Player.prototype.load = function( plynd_metadata, plynd_state ) {
     },
     */
 
-    if ( plynd_metadata ) {       
-        this.name = plynd_metadata.playerName;
-        // this.first_name = plynd_metadata.user.firstName;
-        // this.last_name = plynd_metadata.user.lastName;
-        // this.picture = plynd_metadata.user.picture;
-        this.color = plynd_metadata.playerColor;
-        this.status = plynd_metadata.status;
+    if ( plynd_player_metadata ) {
+        this.name = plynd_player_metadata.playerName;
+        // this.first_name = plynd_player_metadata.user.firstName;
+        // this.last_name = plynd_player_metadata.user.lastName;
+        // this.picture = plynd_player_metadata.user.picture;
+        this.color = plynd_player_metadata.playerColor;
+        this.status = plynd_player_metadata.status;
     }
     
     // state
@@ -823,19 +823,19 @@ Player.prototype.load = function( plynd_metadata, plynd_state ) {
     }
     */    
     
-    if ( plynd_state ) {
-        this.x = plynd_state.x;
-        this.y = plynd_state.y;
-        this.orientation.set( plynd_state.o );
-        this.points = plynd_state.p;
-        this.hand = plynd_state.h || [];
-        this._registers = plynd_state.r || [];
+    if ( plynd_robot_state ) {
+        this.x = plynd_robot_state.x;
+        this.y = plynd_robot_state.y;
+        this.orientation.set( plynd_robot_state.o );
+        this.points = plynd_robot_state.p;
+        this.hand = plynd_robot_state.h || [];
+        this._registers = plynd_robot_state.r || [];
     }    
 }
 
 // dump
 
-Player.prototype.dump = function() {
+Robot.prototype.dump = function() {
     var plynd_state = {}; 
     if ( is_not_null( this.id ) ) {
         plynd_state.id = this.id;
@@ -863,7 +863,7 @@ Player.prototype.dump = function() {
 
 // flush
 
-Player.prototype.flush = function() {
+Robot.prototype.flush = function() {
     var out = null;
     var sep = '';
     var out = '{ id: ' + this.id;
@@ -890,41 +890,41 @@ Player.prototype.flush = function() {
 
 // state
 
-Player.prototype.is_active = function() {
+Robot.prototype.is_active = function() {
     return ( this.status == 'has_turn' );
 }
 
-Player.prototype.is_eliminated = function() {
+Robot.prototype.is_eliminated = function() {
     return ( this.status == 'eliminated' );
 }
 
-Player.prototype.is_alive = function() {
+Robot.prototype.is_alive = function() {
     return ( min_points < this.points ) && !this.is_eliminated();
 }
 
-Player.prototype.looses_all_points = function() {
-    console.log( '[server] player ' + this.id + ' looses all points...' );
+Robot.prototype.looses_all_points = function() {
+    console.log( '[server] robot ' + this.id + ' looses all points...' );
     this.points = min_points;
 }
 
-Player.prototype.looses_points = function( points ) {
-    console.log( '[server] player ' + this.id + ' looses ' + points + ' point(s)...' );
+Robot.prototype.looses_points = function( points ) {
+    console.log( '[server] robot ' + this.id + ' looses ' + points + ' point(s)...' );
     this.points = Math.max( min_points, Math.min( max_points, this.points - points ) );
 }
 
-Player.prototype.gains_points = function( points ) {
-    console.log( '[server] player ' + this.id + ' gains ' + points + ' point(s)...' );
+Robot.prototype.gains_points = function( points ) {
+    console.log( '[server] robot ' + this.id + ' gains ' + points + ' point(s)...' );
     this.points = Math.max( min_points, Math.min( max_points, this.points + points ) );
 }
 
-Player.prototype.die = function( state ) {
-    console.log( '[server] player ' + this.id + ' dies...' );
+Robot.prototype.die = function( state ) {
+    console.log( '[server] robot ' + this.id + ' dies...' );
     this.unset_cell();
     this.unset_orientation();
     this.looses_all_points();
 }
 
-Player.prototype.damage = function( state, damage ) {
+Robot.prototype.damage = function( state, damage ) {
     this.looses_points( damage );
     if ( this.is_alive() ) {
         return;
@@ -934,148 +934,148 @@ Player.prototype.damage = function( state, damage ) {
 
 // cell
 
-Player.prototype.unset_cell = function() {
+Robot.prototype.unset_cell = function() {
     if ( is_not_null( this._cell ) ) { 
-        this._cell.unset_player();
+        this._cell.unset_robot();
     }
     this._cell = null;
     this.x = null;
     this.y = null;
 }
 
-Player.prototype.set_cell = function( cell ) {
+Robot.prototype.set_cell = function( cell ) {
     if ( is_null( cell ) ) {
         this.unset_cell();
         return;
     }
     if ( is_not_null( this._cell ) ) {
-        this._cell.unset_player();
+        this._cell.unset_robot();
     }
     this._cell = cell;
-    this._cell.set_player( this );
+    this._cell.set_robot( this );
     this.x = this._cell.x;
     this.y = this._cell.y;
 }
 
-Player.prototype.get_cell = function() {
+Robot.prototype.get_cell = function() {
     return this._cell;
 }
 
 // orientation
 
-Player.prototype.unset_orientation = function() {
+Robot.prototype.unset_orientation = function() {
     this.orientation.unset();
 }
 
-Player.prototype.rotate = function( nb_quarter ) {
+Robot.prototype.rotate = function( nb_quarter ) {
     this.orientation.rotate( nb_quarter );
 }
 
-Player.prototype.toward_east = function() {
+Robot.prototype.toward_east = function() {
     return this.orientation.is_east();
 }
 
-Player.prototype.toward_south = function() {
+Robot.prototype.toward_south = function() {
     return this.orientation.is_south();
 }
 
-Player.prototype.toward_west = function() {
+Robot.prototype.toward_west = function() {
     return this.orientation.is_west();
 }
 
-Player.prototype.toward_north = function() {
+Robot.prototype.toward_north = function() {
     return this.orientation.is_north();
 }
 
 // programs
 
 /*
-Player.prototype.add_card = function( card ) {
+Robot.prototype.add_card = function( card ) {
     this._cards.push( card );
 }
 */
 
-Player.prototype.get_hand = function() {
+Robot.prototype.get_hand = function() {
     return this.hand;
 }
 
 // registers
 //  - it is an index pointing to one card / program
 
-Player.prototype.has_played = function() {
+Robot.prototype.has_played = function() {
     return this.has_registers();
 }
 
-Player.prototype.has_registers = function() {
+Robot.prototype.has_registers = function() {
     return is_not_null( this._registers ) && ( this._registers.length != 0 );
 }
 
-Player.prototype.get_registers = function() {
+Robot.prototype.get_registers = function() {
     return this._registers;
 }
 
-Player.prototype.select_registers = function( registers ) {
+Robot.prototype.select_registers = function( registers ) {
     if ( is_null( registers ) ) {
-        throw '[error] player ' + this.id + ': missing registers!';
+        throw '[error] robot ' + this.id + ': missing registers!';
     } 
     if ( registers.length > nb_phase ) {
-        throw '[error] player ' + this.id + ': too much registers!';
+        throw '[error] robot ' + this.id + ': too much registers!';
     } 
     if ( registers.length < nb_phase ) {
-        throw '[error] player ' + this.id + ': not enough registers!';
+        throw '[error] robot ' + this.id + ': not enough registers!';
     }
-    console.log( '[server] player ' + this.id + ': select_registers: ' + registers.join( '-' ) )
+    console.log( '[server] robot ' + this.id + ': select_registers: ' + registers.join( '-' ) )
     var registers_already_selected = [];
     for ( var phase = 0 ; phase < nb_phase; ++phase ) {
         var register = parseInt( registers[ phase ] );
         if ( ( 0 <= register ) && ( register < this.hand.length ) ) {
             if ( registers_already_selected.indexOf( register ) !== -1 ) {
-                throw '[error] player ' + this.id + ': register ' + register + ' already selected!';
+                throw '[error] robot ' + this.id + ': register ' + register + ' already selected!';
             }
             // var program = this.hand[ register ];
-            // console.log( '[server] player ' + this.id + ': register ' + register + ' selected for phase ' + phase + '.' );
+            // console.log( '[server] robot ' + this.id + ': register ' + register + ' selected for phase ' + phase + '.' );
             registers_already_selected.push( register );
         }
         else {
-            throw '[error] player ' + this.id + ': invalid register: ' + registers[ phase ] + '!';
+            throw '[error] robot ' + this.id + ': invalid register: ' + registers[ phase ] + '!';
         }
     } 
     this._registers = registers;
 }
 
-Player.prototype.activate_register = function( phase ) {
+Robot.prototype.activate_register = function( phase ) {
     if ( ( 0 <= phase ) && ( phase < this._registers.length ) ) {
         var register = this._registers[ phase ];
         if ( ( 0 <= register ) && ( register < this.hand.length ) ) {
             var program = this.hand[ register ];
-            console.log( '[server] activate: { phase: ' + phase + ', player: ' + this.id + ', register: ' + register + ', program: ' + program + ' }' );
+            console.log( '[server] activate: { phase: ' + phase + ', robot: ' + this.id + ', register: ' + register + ', program: ' + program + ' }' );
         }
         else {
-            throw '[error] player ' + this.id + ': invalid register! (' + register + ')';
+            throw '[error] robot ' + this.id + ': invalid register! (' + register + ')';
         }
     }
     else {
-        throw '[error] player ' + this.id + ': invalid phase! (' + phase + ')';
+        throw '[error] robot ' + this.id + ': invalid phase! (' + phase + ')';
     }
 }
 
 // actions
 
-Player.prototype.move_3_forward = function( state ) {
-    console.log( '[server] player ' + this.id + ' moves 3 forward...' );
+Robot.prototype.move_3_forward = function( state ) {
+    console.log( '[server] robot ' + this.id + ' moves 3 forward...' );
     this.move_forward( state );
     this.move_forward( state );
     this.move_forward( state );
 }
 
-Player.prototype.move_2_forward = function( state ) {
-    console.log( '[server] player ' + this.id + ' moves 2 forward...' );
+Robot.prototype.move_2_forward = function( state ) {
+    console.log( '[server] robot ' + this.id + ' moves 2 forward...' );
     this.move_forward( state );
     this.move_forward( state );
 }
 
-Player.prototype.move_forward = function( state ) {
-    console.log( '[server] player ' + this.id + ' moves forward...' );
+Robot.prototype.move_forward = function( state ) {
+    console.log( '[server] robot ' + this.id + ' moves forward...' );
     if ( this.toward_north() ) {
         this.move_north( state );
     }
@@ -1090,8 +1090,8 @@ Player.prototype.move_forward = function( state ) {
     }
 }
 
-Player.prototype.move_backward = function( state ) {
-    console.log( '[server] player ' + this.id + ' moves backward...' );
+Robot.prototype.move_backward = function( state ) {
+    console.log( '[server] robot ' + this.id + ' moves backward...' );
     if ( this.toward_north() ) {
         this.move_south();
     }
@@ -1106,8 +1106,8 @@ Player.prototype.move_backward = function( state ) {
     }
 }
 
-Player.prototype.slide_right = function( state ) {
-    console.log( '[server] player ' + this.id + ' slides right...' );
+Robot.prototype.slide_right = function( state ) {
+    console.log( '[server] robot ' + this.id + ' slides right...' );
     if ( this.toward_north() ) {
         this.move_east();
     }
@@ -1122,8 +1122,8 @@ Player.prototype.slide_right = function( state ) {
     }
 }
 
-Player.prototype.slide_left = function( state ) {
-    console.log( '[server] player ' + this.id + ' slides left...' );
+Robot.prototype.slide_left = function( state ) {
+    console.log( '[server] robot ' + this.id + ' slides left...' );
     if ( this.toward_north() ) {
         this.move_west();
     }
@@ -1138,23 +1138,23 @@ Player.prototype.slide_left = function( state ) {
     }
 }
 
-Player.prototype.turn_left = function( state ) {
-    console.log( '[server] player ' + this.id + ' turns left...' );
+Robot.prototype.turn_left = function( state ) {
+    console.log( '[server] robot ' + this.id + ' turns left...' );
     this.orientation.rotate( 3 );
 }
 
-Player.prototype.turn_right = function( state ) {
-    console.log( '[server] player ' + this.id + ' turns right...' );
+Robot.prototype.turn_right = function( state ) {
+    console.log( '[server] robot ' + this.id + ' turns right...' );
     this.orientation.rotate( 1 );
 }
 
-Player.prototype.uturn = function( state ) {
-    console.log( '[server] player ' + this.id + ' uturns...' );
+Robot.prototype.uturn = function( state ) {
+    console.log( '[server] robot ' + this.id + ' uturns...' );
     this.orientation.rotate( 2 );
 }
 
-Player.prototype.shoot = function( state ) {
-    console.log( '[server] player ' + this.id + ' shoots...' );
+Robot.prototype.shoot = function( state ) {
+    console.log( '[server] robot ' + this.id + ' shoots...' );
     if ( this.toward_north() ) {
         this.shoot_north( this._cell, 1, state );
     }
@@ -1169,8 +1169,8 @@ Player.prototype.shoot = function( state ) {
     }
 }
 
-Player.prototype.shoot_2 = function( state ) {
-    console.log( '[server] player ' + this.id + ' shoots twice...' );
+Robot.prototype.shoot_2 = function( state ) {
+    console.log( '[server] robot ' + this.id + ' shoots twice...' );
     if ( this.toward_north() ) {
         this.shoot_north( this._cell, 2, state );
     }
@@ -1185,74 +1185,74 @@ Player.prototype.shoot_2 = function( state ) {
     }
 }
 
-Player.prototype.pause = function( state ) {
-    console.log( '[server] player ' + this.id + ' pauses...' );
+Robot.prototype.pause = function( state ) {
+    console.log( '[server] robot ' + this.id + ' pauses...' );
 }
 
-Player.prototype.repair = function( state ) {
-    console.log( '[server] player ' + this.id + ' repairs itself...' );
+Robot.prototype.repair = function( state ) {
+    console.log( '[server] robot ' + this.id + ' repairs itself...' );
 }
 
 // move
 
-Player.prototype.move_east = function( state ) {
+Robot.prototype.move_east = function( state ) {
     if ( is_null( this._cell ) ) {
-        throw '[error] player ' + this.id + ': missing cell!';
+        throw '[error] robot ' + this.id + ': missing cell!';
     }
-    console.log( '[server] player ' + this.id + ' moves east...' );
-    return this.move_to_cell( state, this._cell.get_east_wall(), this._cell.get_east_cell(), Player.prototype.move_east );
+    console.log( '[server] robot ' + this.id + ' moves east...' );
+    return this.move_to_cell( state, this._cell.get_east_wall(), this._cell.get_east_cell(), Robot.prototype.move_east );
 }
 
-Player.prototype.move_south = function( state ) {
+Robot.prototype.move_south = function( state ) {
     if ( is_null( this._cell ) ) {
-        throw '[error] player ' + this.id + ': missing cell!';
+        throw '[error] robot ' + this.id + ': missing cell!';
     }
-    console.log( '[server] player ' + this.id + ' moves south...' );
-    return this.move_to_cell( state, this._cell.get_south_wall(), this._cell.get_south_cell(), Player.prototype.move_south );
+    console.log( '[server] robot ' + this.id + ' moves south...' );
+    return this.move_to_cell( state, this._cell.get_south_wall(), this._cell.get_south_cell(), Robot.prototype.move_south );
 }
 
-Player.prototype.move_west = function( state ) {
+Robot.prototype.move_west = function( state ) {
     if ( is_null( this._cell ) ) {
-        throw '[error] player ' + this.id + ': missing cell!';
+        throw '[error] robot ' + this.id + ': missing cell!';
     }
-    console.log( '[server] player ' + this.id + ' moves west...' );
-    return this.move_to_cell( state, this._cell.get_west_wall(), this._cell.get_west_cell(), Player.prototype.move_west );
+    console.log( '[server] robot ' + this.id + ' moves west...' );
+    return this.move_to_cell( state, this._cell.get_west_wall(), this._cell.get_west_cell(), Robot.prototype.move_west );
 }
 
-Player.prototype.move_north = function( state ) {
+Robot.prototype.move_north = function( state ) {
     if ( is_null( this._cell ) ) {
-        throw '[error] player ' + this.id + ': missing cell!';
+        throw '[error] robot ' + this.id + ': missing cell!';
     }
-    console.log( '[server] player ' + this.id + ' moves north...' );
-    return this.move_to_cell( state, this._cell.get_north_wall(), this._cell.get_north_cell(), Player.prototype.move_north );
+    console.log( '[server] robot ' + this.id + ' moves north...' );
+    return this.move_to_cell( state, this._cell.get_north_wall(), this._cell.get_north_cell(), Robot.prototype.move_north );
 }
 
-Player.prototype.move_to_cell = function( state, wall, cell, push_fn ) {
+Robot.prototype.move_to_cell = function( state, wall, cell, push_fn ) {
     
     // wall
     if ( is_not_null( wall ) && wall.is_closed() ) {
-        console.log( '[server] player ' + this.id + ' hits the wall...' );
+        console.log( '[server] robot ' + this.id + ' hits the wall...' );
         this.damage( state, 1 );
-        console.log( '[server] player ' + this.id + ' does not move...' );
+        console.log( '[server] robot ' + this.id + ' does not move...' );
         return false;
     }
     
     // out of board
     if ( is_null( cell ) ) {
-        console.log( '[server] player ' + this.id + ' falls out of board...' );
+        console.log( '[server] robot ' + this.id + ' falls out of board...' );
         this.die( state );
-        return true; // player moves and dies...
+        return true; // robot moves and dies...
     }
     
-    // push other player if any ( using the push_fn method )
-    var other_player = cell.get_player();
-    if ( is_not_null( other_player ) ) {
-         console.log( '[server] player ' + this.id + ' tries to push player ' + other_player.id + '...' );
-         if ( push_fn.apply( other_player, [state] ) === false ) {
-            // treat the other player as a wall
-            console.log( '[server] player ' + this.id + ' hits player ' + other_player.id + '...' );
+    // push other robot if any ( using the push_fn method )
+    var other_robot = cell.get_robot();
+    if ( is_not_null( other_robot ) ) {
+         console.log( '[server] robot ' + this.id + ' tries to push robot ' + other_robot.id + '...' );
+         if ( push_fn.apply( other_robot, [state] ) === false ) {
+            // treat the other robot as a wall
+            console.log( '[server] robot ' + this.id + ' hits robot ' + other_robot.id + '...' );
             this.damage( state, 1 );
-            return false; // player does not move... ( as other player does not move )
+            return false; // robot does not move... ( as other robot does not move )
          }
     }
     
@@ -1261,73 +1261,73 @@ Player.prototype.move_to_cell = function( state, wall, cell, push_fn ) {
     
     // hole
     if ( cell.is_hole() ) {
-        console.log( '[server] player ' + this.id + ' falls in hole ' + cell.x + '-' + cell.y + '.' );
+        console.log( '[server] robot ' + this.id + ' falls in hole ' + cell.x + '-' + cell.y + '.' );
         this.die( state );
-        return true; // player moves and dies...            
+        return true; // robot moves and dies...            
     }
     
-    console.log( '[server] player ' + this.id + ' moves to cell ' + cell.x + '-' + cell.y + '.' );
+    console.log( '[server] robot ' + this.id + ' moves to cell ' + cell.x + '-' + cell.y + '.' );
     return true;
 }
 
 // shoot
 
-Player.prototype.shoot_east = function( cell, damage, state ) {
+Robot.prototype.shoot_east = function( cell, damage, state ) {
     if ( is_null( cell ) ) {
-        throw '[error] player ' + this.id + ': missing cell!';
+        throw '[error] robot ' + this.id + ': missing cell!';
     }
-    console.log( '[server] player ' + this.id + ' shoots east...' );
-    return this.shoot_toward_cell( state, damage, cell.get_east_wall(), cell.get_east_cell(), Player.prototype.shoot_east );
+    console.log( '[server] robot ' + this.id + ' shoots east...' );
+    return this.shoot_toward_cell( state, damage, cell.get_east_wall(), cell.get_east_cell(), Robot.prototype.shoot_east );
 }
 
-Player.prototype.shoot_south = function( cell, damage, state ) {
+Robot.prototype.shoot_south = function( cell, damage, state ) {
     if ( is_null( cell ) ) {
-        throw '[error] player ' + this.id + ': missing cell!';
+        throw '[error] robot ' + this.id + ': missing cell!';
     }
-    console.log( '[server] player ' + this.id + ' shoots south...' );
-    return this.shoot_toward_cell( state, damage, cell.get_south_wall(), cell.get_south_cell(), Player.prototype.shoot_south );
+    console.log( '[server] robot ' + this.id + ' shoots south...' );
+    return this.shoot_toward_cell( state, damage, cell.get_south_wall(), cell.get_south_cell(), Robot.prototype.shoot_south );
 }
 
-Player.prototype.shoot_west = function( cell, damage, state ) {
+Robot.prototype.shoot_west = function( cell, damage, state ) {
     if ( is_null( cell ) ) {
-        throw '[error] player ' + this.id + ': missing cell!';
+        throw '[error] robot ' + this.id + ': missing cell!';
     }
-    console.log( '[server] player ' + this.id + ' shoots west...' );
-    return this.shoot_toward_cell( state, damage, cell.get_west_wall(), cell.get_west_cell(), Player.prototype.shoot_west );
+    console.log( '[server] robot ' + this.id + ' shoots west...' );
+    return this.shoot_toward_cell( state, damage, cell.get_west_wall(), cell.get_west_cell(), Robot.prototype.shoot_west );
 }
 
-Player.prototype.shoot_north = function( cell, damage, state ) {
+Robot.prototype.shoot_north = function( cell, damage, state ) {
     if ( is_null( cell ) ) {
-        throw '[error] player ' + this.id + ': missing cell!';
+        throw '[error] robot ' + this.id + ': missing cell!';
     }
-    console.log( '[server] player ' + this.id + ' shoots north...' );
-    return this.shoot_toward_cell( state, damage, cell.get_north_wall(), cell.get_north_cell(), Player.prototype.shoot_north );
+    console.log( '[server] robot ' + this.id + ' shoots north...' );
+    return this.shoot_toward_cell( state, damage, cell.get_north_wall(), cell.get_north_cell(), Robot.prototype.shoot_north );
 }
 
-Player.prototype.shoot_toward_cell = function( state, damage, wall, next_cell, shoot_fn ) {
+Robot.prototype.shoot_toward_cell = function( state, damage, wall, next_cell, shoot_fn ) {
     
     // laser hits wall
     if ( is_not_null( wall ) && wall.is_closed() ) {
-        console.log( '[server] laser of player ' + this.id + ' hits the wall...' );
+        console.log( '[server] laser of robot ' + this.id + ' hits the wall...' );
         return false;
     }
     
     // laser out of board
     if ( is_null( next_cell ) ) {
-        console.log( '[server] laser of player ' + this.id + ' hits no player...' );
+        console.log( '[server] laser of robot ' + this.id + ' hits no robot...' );
         return false;
     }
     
-    // laser hits other player on next_cell
-    var other_player = next_cell.get_player();
-    if ( is_not_null( other_player ) ) {
-         console.log( '[server] laser of player ' + this.id + ' hits player ' + other_player.id + '...' );
-         other_player.damage( state, damage );
+    // laser hits other robot on next_cell
+    var other_robot = next_cell.get_robot();
+    if ( is_not_null( other_robot ) ) {
+         console.log( '[server] laser of robot ' + this.id + ' hits robot ' + other_robot.id + '...' );
+         other_robot.damage( state, damage );
          return true;
     }
     
     // laser continue
-    console.log( '[server] laser of player ' + this.id + ' goes through cell ' + next_cell.flush() + '...' );
+    console.log( '[server] laser of robot ' + this.id + ' goes through cell ' + next_cell.flush() + '...' );
     return shoot_fn.apply( this, [next_cell, damage, state] );
 }
 
@@ -1339,8 +1339,8 @@ function State( plynd_metadata, plynd_state ) {
     // private
     this._plynd_metadata = plynd_metadata;
     this._plynd_state = plynd_state;
-    // this._players
-    // this._current_player
+    // this._robots
+    // this._current_robot
     // this._board
     // this._history
     
@@ -1354,19 +1354,19 @@ State.prototype._prepare = function() {
     if ( is_null( this._plynd_metadata ) ) {
         return;
     }
-    // prepare players
+    // prepare robots
     var plynd_metadata_players = is_not_null( this._plynd_metadata.players ) ? this._plynd_metadata.players : {};
-    var plynd_state_players = is_not_null( this._plynd_state ) && is_not_null( this._plynd_state.players ) ? this._plynd_state.players : {};    
-    this._players = {};
+    var plynd_state_robots = is_not_null( this._plynd_state ) && is_not_null( this._plynd_state.robots ) ? this._plynd_state.robots : {};    
+    this._robots = {};
     for ( var i = 0 ; i < this._plynd_metadata.orderOfPlay.length ; i++ ) {
-        var plynd_player_id = this._plynd_metadata.orderOfPlay[ i ];
-        var player = new Player( plynd_player_id );
-        var plynd_player_metadata = player.id in plynd_metadata_players ? plynd_metadata_players[ player.id ] : null;
-        var plynd_player_state = player.id in plynd_state_players ? plynd_state_players[ player.id ] : null;
-        player.load( plynd_player_metadata, plynd_player_state );
-        this._players[ plynd_player_id ] = player;
+        var plynd_robot_id = this._plynd_metadata.orderOfPlay[ i ];
+        var robot = new Robot( plynd_robot_id );
+        var plynd_player_metadata = robot.id in plynd_metadata_players ? plynd_metadata_players[ robot.id ] : null;
+        var plynd_robot_state = robot.id in plynd_state_robots ? plynd_state_robots[ robot.id ] : null;
+        robot.load( plynd_player_metadata, plynd_robot_state );
+        this._robots[ plynd_robot_id ] = robot;
     }
-    this._current_player_id = this._plynd_metadata.ownPlayerID;
+    this._current_robot_id = this._plynd_metadata.ownPlayerID;
     // prepare board
     this._board = load_board_from_id( this._plynd_metadata.boardID );
 }
@@ -1374,27 +1374,27 @@ State.prototype._prepare = function() {
 State.prototype.initialize = function() {
     var start_cells = is_not_null( this._board ) ? this._board.get_start_cells() : [];
     var index = 0;
-    for ( var id in this._players ) {
+    for ( var id in this._robots ) {
         var start_cell = index < start_cells.length ? start_cells[ index ] : null;
-        this._players[ id ].initialize( start_cell );
+        this._robots[ id ].initialize( start_cell );
         index++;
     }
 }
 
 State.prototype.dump = function() {
     var plynd_state = {
-        players: {}
+        robots: {}
     };
-    for ( var id in this._players ) {
-        plynd_state.players[ id ] = this._players[ id ].dump();
+    for ( var id in this._robots ) {
+        plynd_state.robots[ id ] = this._robots[ id ].dump();
     }
     return plynd_state;
 }
 
 State.prototype.flush = function() {
     var out = null;
-    for ( var id in this._players ) {
-        out = ( out ? out + ', ' : '[ ' ) + this._players[id].flush();
+    for ( var id in this._robots ) {
+        out = ( out ? out + ', ' : '[ ' ) + this._robots[id].flush();
     }
     out = ( out ? out + ' ]' : '[]' );
     return out;
@@ -1406,27 +1406,27 @@ State.prototype.get_board = function() {
     return this._board;
 }
 
-// player
+// robot
 
-State.prototype.get_player = function( id ) {
-    if ( id in this._players ) {
-        return this._players[id];
+State.prototype.get_robot = function( id ) {
+    if ( id in this._robots ) {
+        return this._robots[id];
     }
-    this._players[id] = new Player( id );
-    return this._players[id];
+    this._robots[id] = new Robot( id );
+    return this._robots[id];
 }
 
-State.prototype.get_current_player = function() {
-    return this.get_player( this._current_player_id );
+State.prototype.get_current_robot = function() {
+    return this.get_robot( this._current_robot_id );
 }
 
 // end of turn
 
 State.prototype.could_trigger_end_of_turn = function() {
-    for ( var id in this._players ) {
-        var player =  this._players[id];
-        if ( player.has_played() !== true ) {
-            console.log( '[server] turn: waiting at least for player ' + id + '.' );
+    for ( var id in this._robots ) {
+        var robot =  this._robots[id];
+        if ( robot.has_played() !== true ) {
+            console.log( '[server] turn: waiting at least for robot ' + id + '.' );
             return false;
         }
     }
@@ -1435,41 +1435,41 @@ State.prototype.could_trigger_end_of_turn = function() {
 
 State.prototype.trigger_end_of_turn = function() {
 
-    var players_ids = Object.keys( this._players );
+    var robots_ids = Object.keys( this._robots );
     for ( var phase = 0 ; phase < nb_phase; ++phase ) {
         console.log( '[server] turn: --- phase ' + phase + ' --- ' );
 
-        // players
+        // robots
 
-        players_ids = random.shuffle( players_ids );
-        for ( var i = 0 ; i < players_ids.length; ++i ) {
-            var player = this._players[ players_ids[ i ] ];
-            player.activate_register( phase );
+        robots_ids = random.shuffle( robots_ids );
+        for ( var i = 0 ; i < robots_ids.length; ++i ) {
+            var robot = this._robots[ robots_ids[ i ] ];
+            robot.activate_register( phase );
         }
 
         // board
     }
 
     /*
-    if ( !state.players ) {
-        return state; // no player
+    if ( !state.robots ) {
+        return state; // no robot
     }
     for ( var round = 0 ; round < max_cards ; round++ ) {
         var cards_to_play = [];
-        for ( var player_id in state.players ) {
-            var state_player = state.players[ player_id ];
-            if ( !state_player ) {
-                continue; // no state for player
+        for ( var robot_id in state.robots ) {
+            var state_robot = state.robots[ robot_id ];
+            if ( !state_robot ) {
+                continue; // no state for robot
             }
-            if ( !state_player.card_positions ) {
-                continue; // no card for player
+            if ( !state_robot.card_positions ) {
+                continue; // no card for robot
             }
-            if ( state_player.card_positions.length <= round ) {
-                continue; // no more card for player
+            if ( state_robot.card_positions.length <= round ) {
+                continue; // no more card for robot
             }
-            var card_position = state_player.card_positions[ round ];
-            var card = state_player.cards[ card_position ];
-            cards_to_play.push( { state_player: state_player, card_position: card_position, card: card } );
+            var card_position = state_robot.card_positions[ round ];
+            var card = state_robot.cards[ card_position ];
+            cards_to_play.push( { state_robot: state_robot, card_position: card_position, card: card } );
         }
 
         if ( cards_to_play.length == 0 ) {
@@ -1482,12 +1482,12 @@ State.prototype.trigger_end_of_turn = function() {
 
         for ( var i = 0 ; i < cards_to_play.length ; i++ ) {
             var card_to_play = cards_to_play[ i ];
-            var state_player = card_to_play.state_player;
+            var state_robot = card_to_play.state_robot;
             var card_position = card_to_play.card_position;
             var card = card_to_play.card;
-            console.log( '[server] round ' + round + ': about to play card #' + card_position + ' ' + card + ' for player ' + state_player.id );
-            state = history_add_card( metadata, state, '0', round, player_id, card );
-            state = apply_card( metadata, state, board, state_player, card );
+            console.log( '[server] round ' + round + ': about to play card #' + card_position + ' ' + card + ' for robot ' + state_robot.id );
+            state = history_add_card( metadata, state, '0', round, robot_id, card );
+            state = apply_card( metadata, state, board, state_robot, card );
         }
     }
     return state;
@@ -1533,9 +1533,9 @@ function server_retrieve_board( plynd_metadata, plynd_state, request, success_fn
 function server_select_registers( plynd_metadata, plynd_state, request, success_fn, error_fn ) {
     try {
         var state = new State( plynd_metadata, plynd_state );
-        var player = state.get_current_player();
+        var robot = state.get_current_robot();
         var registers = is_not_null( request ) && is_not_null( request.registers ) ? request.registers : null;
-        player.select_registers( registers );
+        robot.select_registers( registers );
         if ( state.could_trigger_end_of_turn() ) {
             state.trigger_end_of_turn();
         }
@@ -1547,13 +1547,13 @@ function server_select_registers( plynd_metadata, plynd_state, request, success_
     
     /*
     var board = get_board( metadata, state );
-    var player = get_current_player( metadata, state );
-    console.log( '[server] > save_cards: player: ' + JSON.stringify( player ) );
+    var robot = get_current_robot( metadata, state );
+    console.log( '[server] > save_cards: robot: ' + JSON.stringify( robot ) );
     
     // apply directly
-    // state = apply_cards( metadata, state, board, player, request.card_positions );
+    // state = apply_cards( metadata, state, board, robot, request.card_positions );
     
-    state = save_cards( metadata, state, board, player, request.card_positions );
+    state = save_cards( metadata, state, board, robot, request.card_positions );
     console.log( '[server] > save_cards: cards: ' + JSON.stringify( request.card_positions ) );
 
     var event = { endTurn: true };
@@ -1581,8 +1581,8 @@ function server_select_registers( plynd_metadata, plynd_state, request, success_
         state = build_turn_state( metadata, state );
     }
     
-    // save players           
-    event.players = state.players;
+    // save robots           
+    event.robots = state.robots;
     
     // console.log( '[server] > play_cards: event: ' + JSON.stringify( event ) );
     */
@@ -1637,13 +1637,16 @@ if ( typeof Plynd !== 'undefined' ) {
     
 }
 
+// //////////////////////////////////////////////////
+// tasks
+
 // TODO: change card numbers
 // TODO: use 1 letter for card and cell
 // TODO: implement register activation
 // DONE: change 'move' to 'register'
 // TODO: change 'hand' to 'programs'
 // TODO: change 'card' to 'program'
-// TODO: change 'player' to 'robot'
+// DONE: change 'player' to 'robot'
 // TODO: implement repair action
 // TODO: implement conveyor belt class
 // TODO: implement error class
