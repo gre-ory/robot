@@ -985,6 +985,14 @@ Player.prototype.get_hand = function() {
     return this.hand;
 }
 
+Player.prototype.has_played = function() {
+    return this.has_move();
+}
+
+Player.prototype.has_move = function() {
+    return is_not_null( this.move ) && ( this.move.length != 0 );
+}
+
 Player.prototype.get_move = function() {
     return this.move;
 }
@@ -1362,7 +1370,25 @@ State.prototype.get_player = function( id ) {
 
 State.prototype.get_current_player = function() {
     return this.get_player( this._current_player_id );
-} 
+}
+
+// end of turn
+
+State.prototype.could_trigger_end_of_turn = function() {
+    console.log( ' ---  could trigger end of turn --- ' );
+    for ( var id in this._players ) {
+        var player =  this._players[id];
+        if ( player.has_played() !== true ) {
+            console.log( '[turn] waiting at least for player ' + id + '.' );
+            return false;
+        }
+    }
+    return true;
+}
+
+State.prototype.trigger_end_of_turn = function() {
+    console.log( ' ---  end of turn --- ' );
+}
 
 // //////////////////////////////////////////////////
 // plynd
@@ -1373,10 +1399,10 @@ function server_error( err ) {
     //     console.log( err.stack );
     // }
     debug( 'server_error', err )
-    if ( err.indexOf( '[error]' ) !== -1 ) {
+    if ( ( typeof err === 'string' ) && ( err.indexOf( '[error]' ) !== -1 ) ) {
         return { code:403, data: err };
     }
-    return { code:403, data: "Internal error! ( " + err + " )" };    
+    return { code:403, data: 'Internal error! ( ' + err + ' )' };
 }
 
 function server_initialize_state( plynd_metadata, plynd_state, request, success_fn, error_fn ) {
@@ -1407,6 +1433,9 @@ function server_set_move( plynd_metadata, plynd_state, request, success_fn, erro
         var player = state.get_current_player();
         var move = is_not_null( request ) && is_not_null( request.move ) ? request.move : null;
         player.set_move( move );
+        if ( state.could_trigger_end_of_turn() ) {
+            state.trigger_end_of_turn();
+        }
         success_fn( state.dump() );
     }
     catch( err ) {
