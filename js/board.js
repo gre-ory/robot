@@ -648,93 +648,6 @@ Board.prototype.get_cell = function( x, y ) {
 }
 
 // //////////////////////////////////////////////////
-// Program
-
-function Program( id, weight, play_fn ) {
-    this.id = id;
-    this.weight = weight;
-    this.play_fn = play_fn;
-}
-
-Program.prototype.play = function( state, robot ) {
-    console.log( '[server] robot ' + robot.id + ' plays program ' + this.id + '...' );
-    if ( is_null( this.play_fn ) ) {
-        throw '[error] robot ' + robot.id + ': invalid program!'; 
-    }
-    this.play_fn.apply( robot, [state] );
-} 
-
-// programs
-
-var program_repair_id = 'r';
-var all_programs = [
-    new Program( '3',  6, Robot.prototype.move_3_forward ),
-    new Program( '2', 12, Robot.prototype.move_2_forward ),
-    new Program( '1', 18, Robot.prototype.move_forward ),
-    new Program( 'b',  6, Robot.prototype.move_backward ),
-    new Program( 'r', 18, Robot.prototype.turn_right ),
-    new Program( 'l', 18, Robot.prototype.turn_left ),
-    new Program( 'u',  6, Robot.prototype.uturn ),
-    new Program( 'R',  6, Robot.prototype.slide_right ),
-    new Program( 'L',  6, Robot.prototype.slide_left ),
-    new Program( 's', 12, Robot.prototype.shoot ),
-    new Program( 'S',  6, Robot.prototype.shoot_2 ),
-    new Program( 'r', 12, Robot.prototype.repair )
-];
-
-// select
-
-Program.select = function( nb, add_repair ) {
-    var programs = [];
-    
-    // compute total weight
-    var total_weight = 0;
-    for ( var i = 0 ; i < all_programs.length ; i++ ) {
-        total_weight += all_programs[i].weight;
-    }
-    // console.log( '[server] total_weight: ' + total_weight );
-    
-    for ( var i = 0 ; i < nb ; i++ ) {
-        var random_weight = random.number( total_weight );
-        // console.log( '[server] random_weight: ' + random_weight );
-        
-        // select program
-        var tmp_weight = 0;
-        for ( var program_index = 0 ; program_index < all_programs.length ; program_index++ ) {
-            tmp_weight += all_programs[program_index].weight;
-            // console.log( '[server] tmp_weight: ' + tmp_weight );
-            if ( random_weight < tmp_weight ) {
-                // console.log( '[server] program_index: ' + program_index );
-                break;
-            }
-        }
-        // var program_index = Math.floor( Math.random() * all_programs.length );
-        // console.log( '[server] program_index: ' + program_index );
-        var program = all_programs[program_index];
-        // console.log( '[server] programs: (+) id: ' + program.id + ', weight: ' + program.weight );
-        programs.push( program.id );    
-    }
-
-    /*
-    if ( add_repair ) {
-        // console.log( '[server] programs: (+) id: ' + program_repair_id );
-        programs.push( id );    
-    }
-    */
-    
-    return programs;
-}
-
-Program.get = function( id ) {
-    for ( var i = 0 ; i < all_programs.length ; i++ ) {
-        if ( all_programs[i].id == id ) {
-            return all_programs[i];
-        }
-    }    
-    return null;
-}
-
-// //////////////////////////////////////////////////
 // Robot
 
 var min_points = 0;
@@ -774,9 +687,9 @@ Robot.prototype.initialize = function( cell ) {
     this._registers = [];
 }
 
-// load
+// _prepare ( called from State.prototype._prepare )
 
-Robot.prototype.load = function( plynd_player_metadata, plynd_robot_state ) {
+Robot.prototype._prepare = function( plynd_player_metadata, plynd_robot_state, board ) {
     
     // metadata
 
@@ -824,8 +737,11 @@ Robot.prototype.load = function( plynd_player_metadata, plynd_robot_state ) {
     */    
     
     if ( plynd_robot_state ) {
-        this.x = plynd_robot_state.x;
-        this.y = plynd_robot_state.y;
+        var cell = is_not_null( board ) ? board.get_cell( plynd_robot_state.x, plynd_robot_state.y ) : null;
+        if ( is_null( cell ) ) {
+            throw '[error] invalid robot position! (' + plynd_robot_state.x + ',' + plynd_robot_state.y + ')';
+        }
+        this.set_cell( cell );
         this.orientation.set( plynd_robot_state.o );
         this.points = plynd_robot_state.p;
         this._programs = plynd_robot_state.programs || [];
@@ -1035,12 +951,14 @@ Robot.prototype.select_registers = function( registers ) {
     this._registers = registers;
 }
 
-Robot.prototype.activate_register = function( phase ) {
+Robot.prototype.activate_register = function( state, phase ) {
     if ( ( 0 <= phase ) && ( phase < this._registers.length ) ) {
         var register = this._registers[ phase ];
         if ( ( 0 <= register ) && ( register < this._programs.length ) ) {
-            var program = this._programs[ register ];
-            console.log( '[server] activate: { phase: ' + phase + ', robot: ' + this.id + ', register: ' + register + ', program: ' + program + ' }' );
+            var program_id = this._programs[ register ];
+            console.log( '[server] activate: { phase: ' + phase + ', robot: ' + this.id + ', register: ' + register + ', program: ' + program_id + ' }' );
+            var program = Program.get( program_id );
+            program.activate( state, this );
         }
         else {
             throw '[error] robot ' + this.id + ': invalid register! (' + register + ')';
@@ -1147,6 +1065,7 @@ Robot.prototype.uturn = function( state ) {
 
 Robot.prototype.shoot = function( state ) {
     console.log( '[server] robot ' + this.id + ' shoots...' );
+    debug( 'cell', this._cell );
     if ( this.toward_north() ) {
         this.shoot_north( this._cell, 1, state );
     }
@@ -1324,6 +1243,93 @@ Robot.prototype.shoot_toward_cell = function( state, damage, wall, next_cell, sh
 }
 
 // //////////////////////////////////////////////////
+// Program
+
+function Program( id, weight, program_fn ) {
+    this.id = id;
+    this.weight = weight;
+    this.program_fn = program_fn;
+}
+
+Program.prototype.activate = function( state, robot ) {
+    console.log( '[server] robot ' + robot.id + ' activates program ' + this.id + '...' );
+    if ( is_null( this.program_fn ) ) {
+        throw '[error] robot ' + robot.id + ': invalid program!';
+    }
+    this.program_fn.apply( robot, [state] );
+}
+
+// programs
+
+var program_repair_id = 'r';
+var all_programs = [
+    new Program( '3',  6, Robot.prototype.move_3_forward ),
+    new Program( '2', 12, Robot.prototype.move_2_forward ),
+    new Program( '1', 18, Robot.prototype.move_forward ),
+    new Program( 'b',  6, Robot.prototype.move_backward ),
+    new Program( 'r', 18, Robot.prototype.turn_right ),
+    new Program( 'l', 18, Robot.prototype.turn_left ),
+    new Program( 'u',  6, Robot.prototype.uturn ),
+    new Program( 'R',  6, Robot.prototype.slide_right ),
+    new Program( 'L',  6, Robot.prototype.slide_left ),
+    new Program( 's', 12, Robot.prototype.shoot ),
+    new Program( 'S',  6, Robot.prototype.shoot_2 ),
+    new Program( 'r', 12, Robot.prototype.repair )
+];
+
+// select
+
+Program.select = function( nb, add_repair ) {
+    var programs = [];
+
+    // compute total weight
+    var total_weight = 0;
+    for ( var i = 0 ; i < all_programs.length ; i++ ) {
+        total_weight += all_programs[i].weight;
+    }
+    // console.log( '[server] total_weight: ' + total_weight );
+
+    for ( var i = 0 ; i < nb ; i++ ) {
+        var random_weight = random.number( total_weight );
+        // console.log( '[server] random_weight: ' + random_weight );
+
+        // select program
+        var tmp_weight = 0;
+        for ( var program_index = 0 ; program_index < all_programs.length ; program_index++ ) {
+            tmp_weight += all_programs[program_index].weight;
+            // console.log( '[server] tmp_weight: ' + tmp_weight );
+            if ( random_weight < tmp_weight ) {
+                // console.log( '[server] program_index: ' + program_index );
+                break;
+            }
+        }
+        // var program_index = Math.floor( Math.random() * all_programs.length );
+        // console.log( '[server] program_index: ' + program_index );
+        var program = all_programs[program_index];
+        // console.log( '[server] programs: (+) id: ' + program.id + ', weight: ' + program.weight );
+        programs.push( program.id );
+    }
+
+    /*
+    if ( add_repair ) {
+        // console.log( '[server] programs: (+) id: ' + program_repair_id );
+        programs.push( id );
+    }
+    */
+
+    return programs;
+}
+
+Program.get = function( id ) {
+    for ( var i = 0 ; i < all_programs.length ; i++ ) {
+        if ( all_programs[i].id == id ) {
+            return all_programs[i];
+        }
+    }
+    throw '[error] invalid program id! (' + id + ')';
+}
+
+// //////////////////////////////////////////////////
 // State
 
 function State( plynd_metadata, plynd_state ) {
@@ -1346,6 +1352,8 @@ State.prototype._prepare = function() {
     if ( is_null( this._plynd_metadata ) ) {
         return;
     }
+    // prepare board
+    this._board = load_board_from_id( this._plynd_metadata.boardID );
     // prepare robots
     var plynd_metadata_players = is_not_null( this._plynd_metadata.players ) ? this._plynd_metadata.players : {};
     var plynd_state_robots = is_not_null( this._plynd_state ) && is_not_null( this._plynd_state.robots ) ? this._plynd_state.robots : {};    
@@ -1355,12 +1363,10 @@ State.prototype._prepare = function() {
         var robot = new Robot( plynd_robot_id );
         var plynd_player_metadata = robot.id in plynd_metadata_players ? plynd_metadata_players[ robot.id ] : null;
         var plynd_robot_state = robot.id in plynd_state_robots ? plynd_state_robots[ robot.id ] : null;
-        robot.load( plynd_player_metadata, plynd_robot_state );
+        robot._prepare( plynd_player_metadata, plynd_robot_state, this._board );
         this._robots[ plynd_robot_id ] = robot;
     }
     this._current_robot_id = this._plynd_metadata.ownPlayerID;
-    // prepare board
-    this._board = load_board_from_id( this._plynd_metadata.boardID );
 }
 
 State.prototype.initialize = function() {
@@ -1436,60 +1442,18 @@ State.prototype.trigger_end_of_turn = function() {
         robots_ids = random.shuffle( robots_ids );
         for ( var i = 0 ; i < robots_ids.length; ++i ) {
             var robot = this._robots[ robots_ids[ i ] ];
-            robot.activate_register( phase );
+            robot.activate_register( this, phase );
         }
 
         // board
     }
-
-    /*
-    if ( !state.robots ) {
-        return state; // no robot
-    }
-    for ( var round = 0 ; round < max_programs ; round++ ) {
-        var programs_to_play = [];
-        for ( var robot_id in state.robots ) {
-            var state_robot = state.robots[ robot_id ];
-            if ( !state_robot ) {
-                continue; // no state for robot
-            }
-            if ( !state_robot.program_positions ) {
-                continue; // no program for robot
-            }
-            if ( state_robot.program_positions.length <= round ) {
-                continue; // no more program for robot
-            }
-            var program_position = state_robot.program_positions[ round ];
-            var program = state_robot.programs[ program_position ];
-            programs_to_play.push( { state_robot: state_robot, program_position: program_position, program: program } );
-        }
-
-        if ( programs_to_play.length == 0 ) {
-            console.log( '[server] round ' + round + ': no program to play!' );
-            break;
-        }
-
-        // shuffle
-        programs_to_play.sort( function() { return 0.5 - Math.random() } );
-
-        for ( var i = 0 ; i < programs_to_play.length ; i++ ) {
-            var program_to_play = programs_to_play[ i ];
-            var state_robot = program_to_play.state_robot;
-            var program_position = program_to_play.program_position;
-            var program = program_to_play.program;
-            console.log( '[server] round ' + round + ': about to play program #' + program_position + ' ' + program + ' for robot ' + state_robot.id );
-            state = history_add_program( metadata, state, '0', round, robot_id, program );
-            state = apply_program( metadata, state, board, state_robot, program );
-        }
-    }
-    return state;
-    */
 }
 
 // //////////////////////////////////////////////////
 // plynd
 
 function server_error( err ) {
+    debug( 'exception', err );
     if ( typeof err === 'string' ) {
         if ( err.indexOf( '[error]' ) !== -1 ) {
             return { code:403, data: err };
@@ -1634,11 +1598,12 @@ if ( typeof Plynd !== 'undefined' ) {
 
 // TODO: change program numbers
 // TODO: use 1 letter for program and cell
-// TODO: implement register activation
+// DONE: implement register activation
 // DONE: change 'move' to 'register'
 // DONE: change 'hand' to 'programs'
 // DONE: change 'program' to 'program'
 // DONE: change 'player' to 'robot'
+// TODO: orientation: change index to char
 // TODO: implement repair action
 // TODO: implement conveyor belt class
 // TODO: implement error class
