@@ -97,6 +97,19 @@ var char_hole   = '#';
 var char_wall_h = '-'; 
 var char_wall_v = '|';
 
+var char_conveyor_belt_n = '^';
+var char_conveyor_belt_e = '>';
+var char_conveyor_belt_s = ',';
+var char_conveyor_belt_w = '<';
+var char_conveyor_belt_n_e = 'n';
+var char_conveyor_belt_n_w = 'N';
+var char_conveyor_belt_s_e = 's';
+var char_conveyor_belt_s_w = 'S';
+var char_conveyor_belt_e_s = 'e';
+var char_conveyor_belt_e_n = 'N';
+var char_conveyor_belt_w_n = 'w';
+var char_conveyor_belt_w_s = 'W';
+
 var _boards = {}; 
 
 _boards[ '12x12' ] = function() {
@@ -109,13 +122,13 @@ _boards[ '12x12' ] = function() {
     board += '+ + + + + + +-+ +-+-+-+-+';
     board += '     # 0     0           ';
     board += '+ + + + + + + + + + + + +';
-    board += '   #  |          # # # # ';
+    board += '   #  |> > > > > # # # # ';
     board += '+ + + + + + + + + + + + +';
     board += '|   |  0  |  0      |   |';
     board += '+ + + + +-+-+ + + + + + +';
-    board += '          |     |    #   ';
+    board += '   ^ .    |     |    #   ';
     board += '+ + + + + + +-+-+ + +-+ +';
-    board += '            |            ';
+    board += '   ^ .      |            ';
     board += '+ + + + + + + + +-+ + + +';
     board += '     #           # #     ';
     board += '+ + + + + + + + + + + + +';
@@ -123,7 +136,7 @@ _boards[ '12x12' ] = function() {
     board += '+ + + + + + + + + + + + +';
     board += '      |  #   #   # #     ';
     board += '+ + + + + + + + +-+ + + +';
-    board += '         #               ';
+    board += '         # < < < <       ';
     board += '+ + + + + + + + + + + + +';
     board += '            #            ';
     board += '+ + + +-+ + + +-+ + + + +';
@@ -655,18 +668,18 @@ Card.prototype.play = function( state, player ) {
 
 var card_repair_id = 'r';
 var all_cards = [
-    new Card( 'f3', 1, Player.prototype.move_3_forward ),
-    new Card( 'f2', 2, Player.prototype.move_2_forward ),
-    new Card( 'f',  3, Player.prototype.move_forward ),
-    new Card( 'b',  2, Player.prototype.move_backward ),
-    new Card( 'sr', 1, Player.prototype.slide_right ),
-    new Card( 'sl', 1, Player.prototype.slide_left ),
-    new Card( 'r',  2, Player.prototype.turn_right ),
-    new Card( 'l',  2, Player.prototype.turn_left ),
-    new Card( 'u',  1, Player.prototype.uturn ),
-    new Card( 's',  0, Player.prototype.shoot ),
-    new Card( 'p',  0, Player.prototype.pause ),
-    new Card( 'r',  0, Player.prototype.repair )
+    new Card( '3',  6, Player.prototype.move_3_forward ),
+    new Card( '2', 12, Player.prototype.move_2_forward ),
+    new Card( '1', 18, Player.prototype.move_forward ),
+    new Card( 'b',  6, Player.prototype.move_backward ),
+    new Card( 'r', 18, Player.prototype.turn_right ),
+    new Card( 'l', 18, Player.prototype.turn_left ),
+    new Card( 'u',  6, Player.prototype.uturn ),
+    new Card( 'R',  6, Player.prototype.slide_right ),
+    new Card( 'L',  6, Player.prototype.slide_left ),
+    new Card( 's', 12, Player.prototype.shoot ),
+    new Card( 'S',  6, Player.prototype.shoot_2 ),
+    new Card( 'r', 12, Player.prototype.repair )
 ];
 
 // deal
@@ -701,11 +714,13 @@ Card.deal = function( nb, add_repair ) {
         // console.log( '[server] cards: (+) id: ' + card.id + ', weight: ' + card.weight );
         cards.push( card.id );    
     }
-    
+
+    /*
     if ( add_repair ) {
         // console.log( '[server] cards: (+) id: ' + card_repair_id );
         cards.push( id );    
     }
+    */
     
     return cards;
 }
@@ -724,7 +739,7 @@ Card.get = function( id ) {
 
 var min_points = 0;
 var max_points = 10;
-var move_length = 5;
+var nb_phase = 5;
 
 function Player( id ) {
     // public 
@@ -746,6 +761,7 @@ function Player( id ) {
     // private 
     // this._cell
     // this._orientation
+    // this._registers
 }
 
 // initialize
@@ -755,7 +771,7 @@ Player.prototype.initialize = function( cell ) {
     this.orientation.initialize();
     this.points = max_points;
     this.hand = Card.deal( this.points, false );
-    this.move = [];
+    this._registers = [];
 }
 
 // load
@@ -813,7 +829,7 @@ Player.prototype.load = function( plynd_metadata, plynd_state ) {
         this.orientation.set( plynd_state.o );
         this.points = plynd_state.p;
         this.hand = plynd_state.h || [];
-        this.move = plynd_state.m || [];
+        this._registers = plynd_state.r || [];
     }    
 }
 
@@ -839,8 +855,8 @@ Player.prototype.dump = function() {
     if ( is_not_null( this.hand ) && this.hand.length > 0 ) {
         plynd_state.h = this.hand;
     }
-    if ( is_not_null( this.move ) && this.move.length > 0 ) {
-        plynd_state.m = this.move;
+    if ( is_not_null( this._registers ) && this._registers.length > 0 ) {
+        plynd_state.r = this._registers;
     }
     return plynd_state;
 }
@@ -887,20 +903,19 @@ Player.prototype.is_alive = function() {
 }
 
 Player.prototype.looses_all_points = function() {
-    this.points = 0;    
+    console.log( '[server] player ' + this.id + ' looses all points...' );
+    this.points = min_points;
 }
 
-Player.prototype.looses_one_point = function() {
-    if ( min_points < this.points ) {
-        this.points = this.points - 1;    
-    }
+Player.prototype.looses_points = function( points ) {
+    console.log( '[server] player ' + this.id + ' looses ' + points + ' point(s)...' );
+    this.points = Math.max( min_points, Math.min( max_points, this.points - points ) );
 }
 
-Player.prototype.gains_one_point = function() {
-    if ( this.points < max_points ) {
-        this.points = this.points + 1;    
-    }
-} 
+Player.prototype.gains_points = function( points ) {
+    console.log( '[server] player ' + this.id + ' gains ' + points + ' point(s)...' );
+    this.points = Math.max( min_points, Math.min( max_points, this.points + points ) );
+}
 
 Player.prototype.die = function( state ) {
     console.log( '[server] player ' + this.id + ' dies...' );
@@ -909,9 +924,8 @@ Player.prototype.die = function( state ) {
     this.looses_all_points();
 }
 
-Player.prototype.damage = function( state ) {
-    console.log( '[server] player ' + this.id + ' looses one point...' );
-    this.looses_one_point();
+Player.prototype.damage = function( state, damage ) {
+    this.looses_points( damage );
     if ( this.is_alive() ) {
         return;
     }
@@ -973,7 +987,7 @@ Player.prototype.toward_north = function() {
     return this.orientation.is_north();
 }
 
-// card
+// programs
 
 /*
 Player.prototype.add_card = function( card ) {
@@ -985,46 +999,64 @@ Player.prototype.get_hand = function() {
     return this.hand;
 }
 
+// registers
+//  - it is an index pointing to one card / program
+
 Player.prototype.has_played = function() {
-    return this.has_move();
+    return this.has_registers();
 }
 
-Player.prototype.has_move = function() {
-    return is_not_null( this.move ) && ( this.move.length != 0 );
+Player.prototype.has_registers = function() {
+    return is_not_null( this._registers ) && ( this._registers.length != 0 );
 }
 
-Player.prototype.get_move = function() {
-    return this.move;
+Player.prototype.get_registers = function() {
+    return this._registers;
 }
 
-Player.prototype.set_move = function( move ) {
-    // debug( 'player ' + this.id + ': set_move: ', move )
-    if ( is_null( move ) ) {
-        throw '[error] player ' + this.id + ': missing move!';
+Player.prototype.select_registers = function( registers ) {
+    if ( is_null( registers ) ) {
+        throw '[error] player ' + this.id + ': missing registers!';
     } 
-    if ( move.length > move_length ) {
-        throw '[error] player ' + this.id + ': too much card played!';
+    if ( registers.length > nb_phase ) {
+        throw '[error] player ' + this.id + ': too much registers!';
     } 
-    if ( move.length < move_length ) {
-        throw '[error] player ' + this.id + ': not enough card card played!';
+    if ( registers.length < nb_phase ) {
+        throw '[error] player ' + this.id + ': not enough registers!';
     }
-    var indexes_already_played = [];
-    for ( var phase = 0 ; phase < move.length ; ++phase ) {
-        var hand_index = parseInt( move[ phase ] );
-        if ( ( 0 <= hand_index ) && ( hand_index < this.hand.length ) ) {
-            if ( indexes_already_played.indexOf( hand_index ) !== -1 ) {
-                throw '[error] player ' + this.id + ': card index already played! (' + hand_index + ')';
+    console.log( '[server] player ' + this.id + ': select_registers: ' + registers.join( '-' ) )
+    var registers_already_selected = [];
+    for ( var phase = 0 ; phase < nb_phase; ++phase ) {
+        var register = parseInt( registers[ phase ] );
+        if ( ( 0 <= register ) && ( register < this.hand.length ) ) {
+            if ( registers_already_selected.indexOf( register ) !== -1 ) {
+                throw '[error] player ' + this.id + ': register ' + register + ' already selected!';
             }
-            var card = this.hand[ hand_index ];
-            console.log( '[server] player ' + this.id + ': card "' + card + '" played for phase ' + phase + '.' );
-            indexes_already_played.push( hand_index );
+            // var program = this.hand[ register ];
+            // console.log( '[server] player ' + this.id + ': register ' + register + ' selected for phase ' + phase + '.' );
+            registers_already_selected.push( register );
         }
         else {
-            throw '[error] player ' + this.id + ': invalid card index! (' + move[phase] + ')';    
+            throw '[error] player ' + this.id + ': invalid register: ' + registers[ phase ] + '!';
         }
     } 
-    // TODO: validate move
-    this.move = move;
+    this._registers = registers;
+}
+
+Player.prototype.activate_register = function( phase ) {
+    if ( ( 0 <= phase ) && ( phase < this._registers.length ) ) {
+        var register = this._registers[ phase ];
+        if ( ( 0 <= register ) && ( register < this.hand.length ) ) {
+            var program = this.hand[ register ];
+            console.log( '[server] activate: { phase: ' + phase + ', player: ' + this.id + ', register: ' + register + ', program: ' + program + ' }' );
+        }
+        else {
+            throw '[error] player ' + this.id + ': invalid register! (' + register + ')';
+        }
+    }
+    else {
+        throw '[error] player ' + this.id + ': invalid phase! (' + phase + ')';
+    }
 }
 
 // actions
@@ -1124,16 +1156,32 @@ Player.prototype.uturn = function( state ) {
 Player.prototype.shoot = function( state ) {
     console.log( '[server] player ' + this.id + ' shoots...' );
     if ( this.toward_north() ) {
-        this.shoot_north( this._cell, state );
+        this.shoot_north( this._cell, 1, state );
     }
     else if ( this.toward_east() ) {
-        this.shoot_east( this._cell, state );
+        this.shoot_east( this._cell, 1, state );
     }
     else if ( this.toward_south() ) {
-        this.shoot_south( this._cell, state );
+        this.shoot_south( this._cell, 1, state );
     }
     else if ( this.toward_west() ) {
-        this.shoot_west( this._cell, state );
+        this.shoot_west( this._cell, 1, state );
+    }
+}
+
+Player.prototype.shoot_2 = function( state ) {
+    console.log( '[server] player ' + this.id + ' shoots twice...' );
+    if ( this.toward_north() ) {
+        this.shoot_north( this._cell, 2, state );
+    }
+    else if ( this.toward_east() ) {
+        this.shoot_east( this._cell, 2, state );
+    }
+    else if ( this.toward_south() ) {
+        this.shoot_south( this._cell, 2, state );
+    }
+    else if ( this.toward_west() ) {
+        this.shoot_west( this._cell, 2, state );
     }
 }
 
@@ -1184,7 +1232,7 @@ Player.prototype.move_to_cell = function( state, wall, cell, push_fn ) {
     // wall
     if ( is_not_null( wall ) && wall.is_closed() ) {
         console.log( '[server] player ' + this.id + ' hits the wall...' );
-        this.damage( state );
+        this.damage( state, 1 );
         console.log( '[server] player ' + this.id + ' does not move...' );
         return false;
     }
@@ -1203,7 +1251,7 @@ Player.prototype.move_to_cell = function( state, wall, cell, push_fn ) {
          if ( push_fn.apply( other_player, [state] ) === false ) {
             // treat the other player as a wall
             console.log( '[server] player ' + this.id + ' hits player ' + other_player.id + '...' );
-            this.damage( state );
+            this.damage( state, 1 );
             return false; // player does not move... ( as other player does not move )
          }
     }
@@ -1224,39 +1272,39 @@ Player.prototype.move_to_cell = function( state, wall, cell, push_fn ) {
 
 // shoot
 
-Player.prototype.shoot_east = function( cell, state ) {
+Player.prototype.shoot_east = function( cell, damage, state ) {
     if ( is_null( cell ) ) {
         throw '[error] player ' + this.id + ': missing cell!';
     }
     console.log( '[server] player ' + this.id + ' shoots east...' );
-    return this.shoot_toward_cell( state, cell.get_east_wall(), cell.get_east_cell(), Player.prototype.shoot_east );
+    return this.shoot_toward_cell( state, damage, cell.get_east_wall(), cell.get_east_cell(), Player.prototype.shoot_east );
 }
 
-Player.prototype.shoot_south = function( cell, state ) {
+Player.prototype.shoot_south = function( cell, damage, state ) {
     if ( is_null( cell ) ) {
         throw '[error] player ' + this.id + ': missing cell!';
     }
     console.log( '[server] player ' + this.id + ' shoots south...' );
-    return this.shoot_toward_cell( state, cell.get_south_wall(), cell.get_south_cell(), Player.prototype.shoot_south );
+    return this.shoot_toward_cell( state, damage, cell.get_south_wall(), cell.get_south_cell(), Player.prototype.shoot_south );
 }
 
-Player.prototype.shoot_west = function( cell, state ) {
+Player.prototype.shoot_west = function( cell, damage, state ) {
     if ( is_null( cell ) ) {
         throw '[error] player ' + this.id + ': missing cell!';
     }
     console.log( '[server] player ' + this.id + ' shoots west...' );
-    return this.shoot_toward_cell( state, cell.get_west_wall(), cell.get_west_cell(), Player.prototype.shoot_west );
+    return this.shoot_toward_cell( state, damage, cell.get_west_wall(), cell.get_west_cell(), Player.prototype.shoot_west );
 }
 
-Player.prototype.shoot_north = function( cell, state ) {
+Player.prototype.shoot_north = function( cell, damage, state ) {
     if ( is_null( cell ) ) {
         throw '[error] player ' + this.id + ': missing cell!';
     }
     console.log( '[server] player ' + this.id + ' shoots north...' );
-    return this.shoot_toward_cell( state, cell.get_north_wall(), cell.get_north_cell(), Player.prototype.shoot_north );
+    return this.shoot_toward_cell( state, damage, cell.get_north_wall(), cell.get_north_cell(), Player.prototype.shoot_north );
 }
 
-Player.prototype.shoot_toward_cell = function( state, wall, next_cell, shoot_fn ) {
+Player.prototype.shoot_toward_cell = function( state, damage, wall, next_cell, shoot_fn ) {
     
     // laser hits wall
     if ( is_not_null( wall ) && wall.is_closed() ) {
@@ -1274,13 +1322,13 @@ Player.prototype.shoot_toward_cell = function( state, wall, next_cell, shoot_fn 
     var other_player = next_cell.get_player();
     if ( is_not_null( other_player ) ) {
          console.log( '[server] laser of player ' + this.id + ' hits player ' + other_player.id + '...' );
-         other_player.damage( state );
+         other_player.damage( state, damage );
          return true;
     }
     
     // laser continue
     console.log( '[server] laser of player ' + this.id + ' goes through cell ' + next_cell.flush() + '...' );
-    return shoot_fn.apply( this, [next_cell, state] );
+    return shoot_fn.apply( this, [next_cell, damage, state] );
 }
 
 // //////////////////////////////////////////////////
@@ -1375,11 +1423,10 @@ State.prototype.get_current_player = function() {
 // end of turn
 
 State.prototype.could_trigger_end_of_turn = function() {
-    console.log( ' ---  could trigger end of turn --- ' );
     for ( var id in this._players ) {
         var player =  this._players[id];
         if ( player.has_played() !== true ) {
-            console.log( '[turn] waiting at least for player ' + id + '.' );
+            console.log( '[server] turn: waiting at least for player ' + id + '.' );
             return false;
         }
     }
@@ -1387,32 +1434,88 @@ State.prototype.could_trigger_end_of_turn = function() {
 }
 
 State.prototype.trigger_end_of_turn = function() {
-    console.log( ' ---  end of turn --- ' );
+
+    var players_ids = Object.keys( this._players );
+    for ( var phase = 0 ; phase < nb_phase; ++phase ) {
+        console.log( '[server] turn: --- phase ' + phase + ' --- ' );
+
+        // players
+
+        players_ids = random.shuffle( players_ids );
+        for ( var i = 0 ; i < players_ids.length; ++i ) {
+            var player = this._players[ players_ids[ i ] ];
+            player.activate_register( phase );
+        }
+
+        // board
+    }
+
+    /*
+    if ( !state.players ) {
+        return state; // no player
+    }
+    for ( var round = 0 ; round < max_cards ; round++ ) {
+        var cards_to_play = [];
+        for ( var player_id in state.players ) {
+            var state_player = state.players[ player_id ];
+            if ( !state_player ) {
+                continue; // no state for player
+            }
+            if ( !state_player.card_positions ) {
+                continue; // no card for player
+            }
+            if ( state_player.card_positions.length <= round ) {
+                continue; // no more card for player
+            }
+            var card_position = state_player.card_positions[ round ];
+            var card = state_player.cards[ card_position ];
+            cards_to_play.push( { state_player: state_player, card_position: card_position, card: card } );
+        }
+
+        if ( cards_to_play.length == 0 ) {
+            console.log( '[server] round ' + round + ': no card to play!' );
+            break;
+        }
+
+        // shuffle
+        cards_to_play.sort( function() { return 0.5 - Math.random() } );
+
+        for ( var i = 0 ; i < cards_to_play.length ; i++ ) {
+            var card_to_play = cards_to_play[ i ];
+            var state_player = card_to_play.state_player;
+            var card_position = card_to_play.card_position;
+            var card = card_to_play.card;
+            console.log( '[server] round ' + round + ': about to play card #' + card_position + ' ' + card + ' for player ' + state_player.id );
+            state = history_add_card( metadata, state, '0', round, player_id, card );
+            state = apply_card( metadata, state, board, state_player, card );
+        }
+    }
+    return state;
+    */
 }
 
 // //////////////////////////////////////////////////
 // plynd
 
 function server_error( err ) {
-    // console.log( '[server] exception: ' + err );
-    // if ( is_not_null( err.stack ) ) {
-    //     console.log( err.stack );
-    // }
-    debug( 'server_error', err )
-    if ( ( typeof err === 'string' ) && ( err.indexOf( '[error]' ) !== -1 ) ) {
-        return { code:403, data: err };
+    if ( typeof err === 'string' ) {
+        if ( err.indexOf( '[error]' ) !== -1 ) {
+            return { code:403, data: err };
+        }
+        return { code:403, data: '[error] ' + err + '!' };
     }
-    return { code:403, data: 'Internal error! ( ' + err + ' )' };
+    console.log( err.stack );
+    return { code:403, data: err };
 }
 
 function server_initialize_state( plynd_metadata, plynd_state, request, success_fn, error_fn ) {
     try {
         var state = new State( plynd_metadata, plynd_state );
         state.initialize();
-        success_fn( state.dump() );
+        success_fn( state.dump(), null );
     }
     catch( err ) {
-        error_fn( server_error( err ) );
+        error_fn( null, server_error( err ) );
     } 
 }
 
@@ -1420,26 +1523,26 @@ function server_retrieve_board( plynd_metadata, plynd_state, request, success_fn
     try {
         var state = new State( plynd_metadata, plynd_state );
         var board = state.get_board();
-        success_fn( board );
+        success_fn( state.dump(), board );
     }
     catch( err ) {
-        error_fn( server_error( err ) );
+        error_fn( null, server_error( err ) );
     } 
 }
 
-function server_set_move( plynd_metadata, plynd_state, request, success_fn, error_fn ) {
+function server_select_registers( plynd_metadata, plynd_state, request, success_fn, error_fn ) {
     try {
         var state = new State( plynd_metadata, plynd_state );
         var player = state.get_current_player();
-        var move = is_not_null( request ) && is_not_null( request.move ) ? request.move : null;
-        player.set_move( move );
+        var registers = is_not_null( request ) && is_not_null( request.registers ) ? request.registers : null;
+        player.select_registers( registers );
         if ( state.could_trigger_end_of_turn() ) {
             state.trigger_end_of_turn();
         }
-        success_fn( state.dump() );
+        success_fn( state.dump(), null );
     }
     catch( err ) {
-        error_fn( server_error( err ) );
+        error_fn( null, server_error( err ) );
     }
     
     /*
@@ -1489,22 +1592,58 @@ if ( typeof Plynd !== 'undefined' ) {
 
     Plynd.ServerFunctions.initializeState = function( request, success_fn, error_fn ) {
         Plynd.getGame( function( plynd_state, plynd_metadata ) {
-            server_initialize_state( plynd_metadata, plynd_state, request, success_fn, error_fn );
+            server_initialize_state( plynd_metadata, plynd_state, request,
+                // return state
+                function( new_plynd_state, response ) {
+                    success_fn( new_plynd_state );
+                },
+                // return error
+                function( new_plynd_state, error ) {
+                    error_fn( error );
+                }
+            );
         } );
     }
     
     Plynd.ServerFunctions.retrieve_board = function( request, success_fn, error_fn ) {
         Plynd.getGame( function( plynd_state, plynd_metadata ) {
-            server_retrieve_board( plynd_metadata, plynd_state, request, success_fn, error_fn );
+            server_retrieve_board( plynd_metadata, plynd_state, request,
+                // return response
+                function( new_plynd_state, response ) {
+                    success_fn( response );
+                },
+                // return error
+                function( new_plynd_state, error ) {
+                    error_fn( error );
+                }
+            );
         } );
     }
     
-    Plynd.ServerFunctions.set_move = function( request, success_fn, error_fn ) {
+    Plynd.ServerFunctions.select_registers = function( request, success_fn, error_fn ) {
         Plynd.getGame( function( plynd_state, plynd_metadata ) {
-            server_set_move( plynd_metadata, plynd_state, request, function( plynd_state ) {
-                Plynd.updateGame( null, plynd_state, success_fn, error_fn );    
-            }, error );
+            server_select_registers( plynd_metadata, plynd_state, request,
+                // update game
+                function( new_plynd_state, response ) {
+                    Plynd.updateGame( response, new_plynd_state, success_fn, error_fn );
+                },
+                // return error
+                function( new_plynd_state, error ) {
+                    error_fn( error );
+                }
+            );
         } );
     }
     
-}    
+}
+
+// TODO: change card numbers
+// TODO: use 1 letter for card and cell
+// TODO: implement register activation
+// DONE: change 'move' to 'register'
+// TODO: change 'hand' to 'programs'
+// TODO: change 'card' to 'program'
+// TODO: change 'player' to 'robot'
+// TODO: implement repair action
+// TODO: implement conveyor belt class
+// TODO: implement error class

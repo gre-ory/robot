@@ -395,7 +395,7 @@ var test_plynd_state = null;
             expect_eq( 'plynd_player[41].y', plynd_player.y, 0 );
             expect_eq( 'plynd_player[41].o', plynd_player.o, 3 );
             expect_eq( 'plynd_player[41].p', plynd_player.p, 10 );
-            expect_eq( 'plynd_player[41].h', plynd_player.h.join(), 'r,f,b,b,f2,l,l,f,r,f' );
+            expect_eq( 'plynd_player[41].h', plynd_player.h.join(), 'L,1,r,l,1,s,s,1,L,b' );
         }
         {
             assert_true( '42 in players', '42' in plynd_state.players );
@@ -405,7 +405,7 @@ var test_plynd_state = null;
             expect_eq( 'plynd_player[42].y', plynd_player.y, 0 );
             expect_eq( 'plynd_player[42].o', plynd_player.o, 3 );
             expect_eq( 'plynd_player[42].p', plynd_player.p, 10 );
-            expect_eq( 'plynd_player[42].h', plynd_player.h.join(), 'f2,u,f2,sl,b,f2,sr,f,f3,f' );
+            expect_eq( 'plynd_player[42].h', plynd_player.h.join(), '1,r,2,l,r,2,l,b,2,1' );
         }
         {
             assert_true( '43 in players', '43' in plynd_state.players );
@@ -415,7 +415,7 @@ var test_plynd_state = null;
             expect_eq( 'plynd_player[43].y', plynd_player.y, 2 );
             expect_eq( 'plynd_player[43].o', plynd_player.o, 4 );
             expect_eq( 'plynd_player[43].p', plynd_player.p, 10 );
-            expect_eq( 'plynd_player[43].h', plynd_player.h.join(), 'f3,f2,f2,f2,f,f3,sr,u,r,sl' );
+            expect_eq( 'plynd_player[43].h', plynd_player.h.join(), '3,2,1,2,1,3,l,r,R,u' );
         }
     }, forbidden_error_callback );
 }
@@ -428,87 +428,87 @@ var test_plynd_state = null;
 }
 
 {
-    start_test( 'server set move: errors' );
+    start_test( 'server_select_registers: errors' );
     test_metadata.ownPlayerID = '43';
     {
-        var move_request = null;
-        server_set_move( test_metadata, test_plynd_state, move_request, forbidden_success_callback, function( err ) {
-            expect_eq( 'error-1', err.data, '[error] player 43: missing move!' );
+        var request_registers = null;
+        server_select_registers( test_metadata, test_plynd_state, request_registers, forbidden_success_callback, function( new_plynd_state, err ) {
+            expect_eq( 'error-1', err.data, '[error] player 43: missing registers!' );
         } );
     }
     {
-        var move_request = { move_mistyped: [ 7, 9, 6, 8, 0 ] };
-        server_set_move( test_metadata, test_plynd_state, move_request, forbidden_success_callback, function( err ) {
-            expect_eq( 'error-2', err.data, '[error] player 43: missing move!' );
+        var request_registers = { registers_mistyped: [ 7, 9, 6, 8, 0 ] };
+        server_select_registers( test_metadata, test_plynd_state, request_registers, forbidden_success_callback, function( new_plynd_state, err ) {
+            expect_eq( 'error-2', err.data, '[error] player 43: missing registers!' );
         } );
     }
     {
-        var move_request = { move: [ 7, 9, 6, 8 ] };
-        server_set_move( test_metadata, test_plynd_state, move_request, forbidden_success_callback, function( err ) {
-            expect_eq( 'error-3', err.data, '[error] player 43: not enough card card played!' );
+        var request_registers = { registers: [ 7, 9, 6, 8 ] };
+        server_select_registers( test_metadata, test_plynd_state, request_registers, forbidden_success_callback, function( new_plynd_state, err ) {
+            expect_eq( 'error-3', err.data, '[error] player 43: not enough registers!' );
         } );
     }
     {
-        var move_request = { move: [ 7, 9, 6, 8, 1, 0 ] };
-        server_set_move( test_metadata, test_plynd_state, move_request, forbidden_success_callback, function( err ) {
-            expect_eq( 'error-4', err.data, '[error] player 43: too much card played!' );
+        var request_registers = { registers: [ 7, 9, 6, 8, 1, 0 ] };
+        server_select_registers( test_metadata, test_plynd_state, request_registers, forbidden_success_callback, function( new_plynd_state, err ) {
+            expect_eq( 'error-4', err.data, '[error] player 43: too much registers!' );
         } );
     }
     {
-        var move_request = { move: [ 7, 9, 6, 9, 1 ] };
-        server_set_move( test_metadata, test_plynd_state, move_request, forbidden_success_callback, function( err ) {
-            expect_eq( 'error-5', err.data, '[error] player 43: card index already played! (9)' );
+        var request_registers = { registers: [ 7, 9, 6, 9, 1 ] };
+        server_select_registers( test_metadata, test_plynd_state, request_registers, forbidden_success_callback, function( new_plynd_state, err ) {
+            expect_eq( 'error-5', err.data, '[error] player 43: register 9 already selected!' );
         } );
     }
     {
-        var move_request = { move: [ 7, -1, 6, 8, 0 ] };
-        server_set_move( test_metadata, test_plynd_state, move_request, forbidden_success_callback, function( err ) {
-            expect_eq( 'error-6', err.data, '[error] player 43: invalid card index! (-1)' );
+        var request_registers = { registers: [ 7, -1, 6, 8, 0 ] };
+        server_select_registers( test_metadata, test_plynd_state, request_registers, forbidden_success_callback, function( new_plynd_state, err ) {
+            expect_eq( 'error-6', err.data, '[error] player 43: invalid register: -1!' );
         } );
     }
     {
-        var move_request = { move: [ 7, 1, 10, 8, 0 ] };
-        server_set_move( test_metadata, test_plynd_state, move_request, forbidden_success_callback, function( err ) {
-            expect_eq( 'error-7', err.data, '[error] player 43: invalid card index! (10)' );
+        var request_registers = { registers: [ 7, 1, 10, 8, 0 ] };
+        server_select_registers( test_metadata, test_plynd_state, request_registers, forbidden_success_callback, function( new_plynd_state, err ) {
+            expect_eq( 'error-7', err.data, '[error] player 43: invalid register: 10!' );
         } );
     }
 }
 
 {
-    start_test( 'server set move: success' );
+    start_test( 'server_select_registers: success' );
     {
         test_metadata.ownPlayerID = '43';
-        var move_request = { move: [ 7, 9, 6, 8, 4 ] };
-        server_set_move( test_metadata, test_plynd_state, move_request, function( plynd_state ) {
-            expect_not_null( 'plynd_state', plynd_state );
-            test_plynd_state = plynd_state;
+        var request_registers = { registers: [ 7, 9, 6, 8, 4 ] };
+        server_select_registers( test_metadata, test_plynd_state, request_registers, function( new_plynd_state, response ) {
+            expect_not_null( 'new_plynd_state', new_plynd_state );
+            test_plynd_state = new_plynd_state;
             var player = test_plynd_state.players[ test_metadata.ownPlayerID ];
             expect_not_null( 'player[' + test_metadata.ownPlayerID + ']', player );
-            expect_eq( 'players[' + test_metadata.ownPlayerID + '].move', player.m.join(), '7,9,6,8,4' );
+            expect_eq( 'players[' + test_metadata.ownPlayerID + '].registers', player.r.join(), '7,9,6,8,4' );
         }, forbidden_error_callback );
         // debug( 'state.players[' + test_metadata.ownPlayerID + ']', test_plynd_state.players[ test_metadata.ownPlayerID ] );
     }
     {
         test_metadata.ownPlayerID = '41';
-        var move_request = { move: [ 3, 6, 4, 2, 7 ] };
-        server_set_move( test_metadata, test_plynd_state, move_request, function( plynd_state ) {
-            expect_not_null( 'plynd_state', plynd_state );
-            test_plynd_state = plynd_state;
+        var request_registers = { registers: [ 3, 6, 4, 2, 7 ] };
+        server_select_registers( test_metadata, test_plynd_state, request_registers, function( new_plynd_state, response ) {
+            expect_not_null( 'new_plynd_state', new_plynd_state );
+            test_plynd_state = new_plynd_state;
             var player = test_plynd_state.players[ test_metadata.ownPlayerID ];
             expect_not_null( 'player[' + test_metadata.ownPlayerID + ']', player );
-            expect_eq( 'players[' + test_metadata.ownPlayerID + '].move', player.m.join(), '3,6,4,2,7' );
+            expect_eq( 'players[' + test_metadata.ownPlayerID + '].registers', player.r.join(), '3,6,4,2,7' );
         }, forbidden_error_callback );
         // debug( 'state.players[' + test_metadata.ownPlayerID + ']', test_plynd_state.players[ test_metadata.ownPlayerID ] );
     }
     {
         test_metadata.ownPlayerID = '42';
-        var move_request = { move: [ 6, 4, 5, 1, 3 ] };
-        server_set_move( test_metadata, test_plynd_state, move_request, function( plynd_state ) {
-            expect_not_null( 'plynd_state', plynd_state );
-            test_plynd_state = plynd_state;
+        var request_registers = { registers: [ 6, 4, 5, 1, 3 ] };
+        server_select_registers( test_metadata, test_plynd_state, request_registers, function( new_plynd_state, response ) {
+            expect_not_null( 'new_plynd_state', new_plynd_state );
+            test_plynd_state = new_plynd_state;
             var player = test_plynd_state.players[ test_metadata.ownPlayerID ];
             expect_not_null( 'player[' + test_metadata.ownPlayerID + ']', player );
-            expect_eq( 'players[' + test_metadata.ownPlayerID + '].move', player.m.join(), '6,4,5,1,3' );
+            expect_eq( 'players[' + test_metadata.ownPlayerID + '].registers', player.r.join(), '6,4,5,1,3' );
         }, forbidden_error_callback );
         // debug( 'state.players[' + test_metadata.ownPlayerID + ']', test_plynd_state.players[ test_metadata.ownPlayerID ] );
     }
