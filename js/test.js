@@ -64,6 +64,16 @@ function expect_eq( msg, computed, expected, throw_error ) {
     return expect_test( msg + ': ' + computed + ' == ' + expected, ( computed == expected ), throw_error );
 }
 
+function expect_exception( msg, fn, throw_error ) {
+    try {
+        fn.apply();
+        expect_test( msg + ': exception is NOT catched!', ( false ), throw_error );
+    }
+    catch( err ) {
+        expect_test( msg + ': exception is catched!', ( true ), throw_error );
+    }
+}
+
 function expect_robot_position( robot, x, y, o, p ) {
     var result = true;
     result &= expect_eq( 'robot_' + robot.id + '.x', robot.x, x );
@@ -558,5 +568,191 @@ var test_plynd_state = null;
     }
     // debug( 'state.robots', test_plynd_state.robots );
 }
+
+{
+    start_test( 'success: conveyor belts' );
+    {
+        var board_text = '';
+        board_text += '         ';
+        board_text += '+-+ + +-+';
+        board_text += '   > V <|';
+        board_text += '+ + + + +';
+        board_text += ' > > V   ';
+        board_text += '+ + + + +';
+        board_text += '   A < < ';
+        board_text += '+ + + + +';
+        board_text += '|  A A <|';
+        board_text += '+-+ + + +';
+        var board = load_board_from_text( board_text );
+        expect_not_null( '[conveyor-belt] board', board );
+        // row 0
+        {
+            var x = 0, y = 0, cell = board.get_cell( x, y );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt', cell.has_conveyor_belt() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_east', cell.has_conveyor_belt_coming_from_east() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_west', cell.has_conveyor_belt_coming_from_south() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_east', cell.has_conveyor_belt_coming_from_west() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_east', cell.has_conveyor_belt_coming_from_north() );
+        }
+        {
+            var x = 1, y = 0, cell = board.get_cell( x, y );
+            expect_not_null( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt', cell.has_conveyor_belt() );
+            expect_true( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_toward_east', cell.has_conveyor_belt_toward_east() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_east', cell.has_conveyor_belt_coming_from_east() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_west', cell.has_conveyor_belt_coming_from_south() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_east', cell.has_conveyor_belt_coming_from_west() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_east', cell.has_conveyor_belt_coming_from_north() );
+        }
+        {
+            var x = 2, y = 0, cell = board.get_cell( x, y );
+            expect_not_null( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt', cell.has_conveyor_belt() );
+            expect_true( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_toward_south', cell.has_conveyor_belt_toward_south() );
+            expect_true( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_east', cell.has_conveyor_belt_coming_from_east() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_west', cell.has_conveyor_belt_coming_from_south() );
+            expect_true( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_east', cell.has_conveyor_belt_coming_from_west() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_east', cell.has_conveyor_belt_coming_from_north() );
+        }
+        {
+            var x = 3, y = 0, cell = board.get_cell( x, y );
+            expect_not_null( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt', cell.has_conveyor_belt() );
+            expect_true( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_toward_west', cell.has_conveyor_belt_toward_west() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_east', cell.has_conveyor_belt_coming_from_east() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_west', cell.has_conveyor_belt_coming_from_south() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_east', cell.has_conveyor_belt_coming_from_west() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_east', cell.has_conveyor_belt_coming_from_north() );
+        }
+        // row 1
+        {
+            var x = 0, y = 1, cell = board.get_cell( x, y );
+            expect_not_null( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt', cell.has_conveyor_belt() );
+            expect_true( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_toward_east', cell.has_conveyor_belt_toward_east() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_east', cell.has_conveyor_belt_coming_from_east() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_west', cell.has_conveyor_belt_coming_from_south() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_east', cell.has_conveyor_belt_coming_from_west() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_east', cell.has_conveyor_belt_coming_from_west() );
+        }
+        {
+            var x = 1, y = 1, cell = board.get_cell( x, y );
+            expect_not_null( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt', cell.has_conveyor_belt() );
+            expect_true( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_toward_east', cell.has_conveyor_belt_toward_east() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_east', cell.has_conveyor_belt_coming_from_east() );
+            expect_true( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_west', cell.has_conveyor_belt_coming_from_south() );
+            expect_true( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_east', cell.has_conveyor_belt_coming_from_west() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_east', cell.has_conveyor_belt_coming_from_north() );
+        }
+        {
+            var x = 2, y = 1, cell = board.get_cell( x, y );
+            expect_not_null( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt', cell.has_conveyor_belt() );
+            expect_true( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_toward_south', cell.has_conveyor_belt_toward_south() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_east', cell.has_conveyor_belt_coming_from_east() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_west', cell.has_conveyor_belt_coming_from_south() );
+            expect_true( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_east', cell.has_conveyor_belt_coming_from_west() );
+            expect_true( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_east', cell.has_conveyor_belt_coming_from_north() );
+        }
+        {
+            var x = 3, y = 1, cell = board.get_cell( x, y );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt', cell.has_conveyor_belt() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_east', cell.has_conveyor_belt_coming_from_east() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_west', cell.has_conveyor_belt_coming_from_south() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_east', cell.has_conveyor_belt_coming_from_west() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_east', cell.has_conveyor_belt_coming_from_north() );
+        }
+        // row 2
+        {
+            var x = 0, y = 2, cell = board.get_cell( x, y );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt', cell.has_conveyor_belt() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_east', cell.has_conveyor_belt_coming_from_east() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_west', cell.has_conveyor_belt_coming_from_south() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_east', cell.has_conveyor_belt_coming_from_west() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_east', cell.has_conveyor_belt_coming_from_north() );
+        }
+        {
+            var x = 1, y = 2, cell = board.get_cell( x, y );
+            expect_not_null( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt', cell.has_conveyor_belt() );
+            expect_true( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_toward_north', cell.has_conveyor_belt_toward_north() );
+            expect_true( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_east', cell.has_conveyor_belt_coming_from_east() );
+            expect_true( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_west', cell.has_conveyor_belt_coming_from_south() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_east', cell.has_conveyor_belt_coming_from_west() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_east', cell.has_conveyor_belt_coming_from_north() );
+        }
+        {
+            var x = 2, y = 2, cell = board.get_cell( x, y );
+            expect_not_null( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt', cell.has_conveyor_belt() );
+            expect_true( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_toward_west', cell.has_conveyor_belt_toward_west() );
+            expect_true( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_east', cell.has_conveyor_belt_coming_from_east() );
+            expect_true( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_west', cell.has_conveyor_belt_coming_from_south() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_east', cell.has_conveyor_belt_coming_from_west() );
+            expect_true( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_east', cell.has_conveyor_belt_coming_from_north() );
+        }
+        {
+            var x = 3, y = 2, cell = board.get_cell( x, y );
+            expect_not_null( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt', cell.has_conveyor_belt() );
+            expect_true( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_toward_west', cell.has_conveyor_belt_toward_west() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_east', cell.has_conveyor_belt_coming_from_east() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_west', cell.has_conveyor_belt_coming_from_south() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_east', cell.has_conveyor_belt_coming_from_west() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_east', cell.has_conveyor_belt_coming_from_north() );
+        }
+        // row 3
+        {
+            var x = 0, y = 3, cell = board.get_cell( x, y );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt', cell.has_conveyor_belt() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_east', cell.has_conveyor_belt_coming_from_east() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_west', cell.has_conveyor_belt_coming_from_south() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_east', cell.has_conveyor_belt_coming_from_west() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_east', cell.has_conveyor_belt_coming_from_north() );
+        }
+        {
+            var x = 1, y = 3, cell = board.get_cell( x, y );
+            expect_not_null( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt', cell.has_conveyor_belt() );
+            expect_true( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_toward_north', cell.has_conveyor_belt_toward_north() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_east', cell.has_conveyor_belt_coming_from_east() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_west', cell.has_conveyor_belt_coming_from_south() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_east', cell.has_conveyor_belt_coming_from_west() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_east', cell.has_conveyor_belt_coming_from_north() );
+        }
+        {
+            var x = 2, y = 3, cell = board.get_cell( x, y );
+            expect_not_null( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt', cell.has_conveyor_belt() );
+            expect_true( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_toward_north', cell.has_conveyor_belt_toward_north() );
+            expect_true( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_east', cell.has_conveyor_belt_coming_from_east() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_west', cell.has_conveyor_belt_coming_from_south() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_east', cell.has_conveyor_belt_coming_from_west() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_east', cell.has_conveyor_belt_coming_from_north() );
+        }
+        {
+            var x = 3, y = 3, cell = board.get_cell( x, y );
+            expect_not_null( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt', cell.has_conveyor_belt() );
+            expect_true( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_toward_west', cell.has_conveyor_belt_toward_west() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_east', cell.has_conveyor_belt_coming_from_east() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_west', cell.has_conveyor_belt_coming_from_south() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_east', cell.has_conveyor_belt_coming_from_west() );
+            expect_false( '[conveyor-belt] cell_' + x + '_' + y + '.has_conveyor_belt_coming_from_east', cell.has_conveyor_belt_coming_from_north() );
+        }
+    }
+}
+
+{
+    start_test( 'error: conveyor belts' );
+    expect_exception( '[conveyor-belt-1]', function() {
+        var board_text = '';
+        board_text += '     ';
+        board_text += '+ + +';
+        board_text += ' > < ';
+        board_text += '+ + +';
+        load_board_from_text( board_text );
+    } );
+    expect_exception( '[conveyor-belt-2]', function() {
+        var board_text = '';
+        board_text += '     ';
+        board_text += '+ + +';
+        board_text += ' V   ';
+        board_text += '+ + +';
+        board_text += ' A   ';
+        board_text += '+ + +';
+        load_board_from_text( board_text );
+    } );
+}
+
 
 test_report();

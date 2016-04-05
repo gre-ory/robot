@@ -101,18 +101,10 @@ var char_hole   = '#';
 var char_wall_h = '-'; 
 var char_wall_v = '|';
 
-var char_conveyor_belt_n = '^';
+var char_conveyor_belt_n = 'A';
 var char_conveyor_belt_e = '>';
-var char_conveyor_belt_s = ',';
+var char_conveyor_belt_s = 'V';
 var char_conveyor_belt_w = '<';
-var char_conveyor_belt_n_e = 'n';
-var char_conveyor_belt_n_w = 'N';
-var char_conveyor_belt_s_e = 's';
-var char_conveyor_belt_s_w = 'S';
-var char_conveyor_belt_e_s = 'e';
-var char_conveyor_belt_e_n = 'N';
-var char_conveyor_belt_w_n = 'w';
-var char_conveyor_belt_w_s = 'W';
 
 var _boards = {}; 
 
@@ -130,13 +122,13 @@ _boards[ '12x12' ] = function() {
     board += '+ + + + + + + + + + + + +';
     board += '|   |  0  |  0      |   |';
     board += '+ + + + +-+-+ + + + + + +';
-    board += '   ^ .    |     |    #   ';
+    board += '   > > v  |     |    #   ';
     board += '+ + + + + + +-+-+ + +-+ +';
-    board += '   ^ .      |            ';
+    board += '   A   v    |            ';
     board += '+ + + + + + + + +-+ + + +';
-    board += '     #           # #     ';
+    board += '   A # v         # #     ';
     board += '+ + + + + + + + + + + + +';
-    board += '       # #   #|    #     ';
+    board += '   A < < #   #|    #     ';
     board += '+ + + + + + + + + + + + +';
     board += '      |  #   #   # #     ';
     board += '+ + + + + + + + +-+ + + +';
@@ -222,7 +214,28 @@ _boards[ 'test_board' ] = function() {
     board += '|  #    |';
     board += '+-+ + + +';
     return board;
-};  
+};
+
+_boards[ 'test_conveyor_belts' ] = function() {
+    var board = '';
+    board += '         ';
+    board += '+ + + + +';
+    board += ' > V A   ';
+    board += '+ + + + +';
+    board += '   V A < ';
+    board += '+ + + + +';
+    board += '   V < A ';
+    board += '+ + + + +';
+    board += '   > A   ';
+    board += '+ + + + +';
+    board += '         ';
+    board += '+ + + + +';
+    board += '   V <   ';
+    board += '+ + + + +';
+    board += '   > A   ';
+    board += '+ + + + +';
+    return board;
+};
 
 // load helper
 
@@ -301,6 +314,18 @@ function load_board_from_text( board_text ) {
             if ( char___ == char_hole ) {
                 cell.set_hole();       
             }
+            else if ( char___ == char_conveyor_belt_e ) {
+                cell.set_conveyor_belt_direction( 'e' );
+            }
+            else if ( char___ == char_conveyor_belt_s ) {
+                cell.set_conveyor_belt_direction( 's' );
+            }
+            else if ( char___ == char_conveyor_belt_w ) {
+                cell.set_conveyor_belt_direction( 'w' );
+            }
+            else if ( char___ == char_conveyor_belt_n ) {
+                cell.set_conveyor_belt_direction( 'n' );
+            }
             else if ( 0 <= step___ && step___ <= 9 ) {
                 cell.set_step( step___ );
                 step_start = step_start ? step_start : Math.min( step_start, cell.get_step() );
@@ -325,18 +350,78 @@ function load_board_from_text( board_text ) {
         var row = board._cells[ y ];
         for ( var x = 0 ; x < row.length ; x++ ) {
             var cell = row[ x ];
-            if ( !cell.has_step() ) {
-                continue;
+
+            // conveyor belt
+
+            if ( cell.has_conveyor_belt() ) {
+                var conveyor_belt = cell.get_conveyor_belt();
+
+                // check that neighbour is not coming in the opposite direction
+                // set incoming conveyor belts
+                // check that two conveyor belts are not pointing to the same cell
+
+                {
+                    var neighbour = cell.get_east_cell();
+                    if ( is_not_null( neighbour ) ) {
+                        if ( neighbour.has_conveyor_belt_toward_west() ) {
+                            if ( conveyor_belt.toward_east() ) {
+                                throw '[error] conflicting conveyor belt!'
+                            }
+                            conveyor_belt.set_incoming_from_east();
+                        }
+                    }
+                }
+                {
+                    var neighbour = cell.get_south_cell();
+                    if ( is_not_null( neighbour ) ) {
+                        //debug( 'neighbour', neighbour );
+                        if ( neighbour.has_conveyor_belt_toward_north() ) {
+                            if ( conveyor_belt.toward_south() ) {
+                                throw '[error] conflicting conveyor belt!'
+                            }
+                            conveyor_belt.set_incoming_from_south();
+                        }
+                    }
+                }
+                {
+                    var neighbour = cell.get_west_cell();
+                    if ( is_not_null( neighbour ) ) {
+                        //debug( 'neighbour', neighbour );
+                        if ( neighbour.has_conveyor_belt_toward_east() ) {
+                            if ( conveyor_belt.toward_west() ) {
+                                throw '[error] conflicting conveyor belt!'
+                            }
+                            conveyor_belt.set_incoming_from_west();
+                        }
+                    }
+                }
+                {
+                    var neighbour = cell.get_north_cell();
+                    if ( is_not_null( neighbour ) ) {
+                        //debug( 'neighbour', neighbour );
+                        if ( neighbour.has_conveyor_belt_toward_south() ) {
+                            if ( conveyor_belt.toward_north() ) {
+                                throw '[error] conflicting conveyor belt!'
+                            }
+                            conveyor_belt.set_incoming_from_north();
+                        }
+                    }
+                }
             }
-            if ( cell.get_step() == step_start ) {
-                cell.set_start();
+
+            // step
+
+            if ( cell.has_step() ) {
+                if ( cell.get_step() == step_start ) {
+                    cell.set_start();
+                }
+                else if ( cell.get_step() == step_end ) {
+                    cell.set_end();
+                }
+                else if ( cell.get_step() ) {
+                    cell.set_step( cell.get_step() - step_start );
+                }
             }
-            else if ( cell.get_step() == step_end ) {
-                cell.set_end();
-            }
-            else if ( cell.get_step() ) {
-                cell.set_step( cell.get_step() - step_start );
-            } 
         }
     }
     return board;
@@ -453,6 +538,95 @@ Wall.prototype.change = function() {
 }
 
 // //////////////////////////////////////////////////
+// ConveyorBelt
+
+function ConveyorBelt( orientation_char ) {
+    // public
+    // private
+    this._orientation = new Orientation();
+    this._orientation.set_char( orientation_char );
+    // this._incoming_directions
+}
+
+ConveyorBelt.prototype.toward_east = function() {
+    return this._orientation.is_east();
+}
+
+ConveyorBelt.prototype.toward_south = function() {
+    return this._orientation.is_south();
+}
+
+ConveyorBelt.prototype.toward_west = function() {
+    return this._orientation.is_west();
+}
+
+ConveyorBelt.prototype.toward_north = function() {
+    return this._orientation.is_north();
+}
+
+ConveyorBelt.prototype.set_incoming_direction = function( orientation_char ) {
+    if ( is_null( this._incoming_directions ) ) {
+        this._incoming_directions = [];
+    }
+    if ( orientation_char in this._incoming_directions ) {
+        return;
+    }
+    this._incoming_directions.push( orientation_char );
+}
+
+ConveyorBelt.prototype.set_incoming_from_east = function() {
+    this.set_incoming_direction( 'e' );
+}
+
+ConveyorBelt.prototype.set_incoming_from_south = function() {
+    this.set_incoming_direction( 's' );
+}
+
+ConveyorBelt.prototype.set_incoming_from_west = function() {
+    this.set_incoming_direction( 'w' );
+}
+
+ConveyorBelt.prototype.set_incoming_from_north = function() {
+    this.set_incoming_direction( 'n' );
+}
+
+ConveyorBelt.prototype.has_incoming_from_east = function() {
+    return 'e' in this._incoming_directions;
+}
+
+ConveyorBelt.prototype.has_incoming_from_south = function() {
+    return 's' in this._incoming_directions;
+}
+
+ConveyorBelt.prototype.has_incoming_from_west = function() {
+    return 'w' in this._incoming_directions;
+}
+
+ConveyorBelt.prototype.has_incoming_from_north = function() {
+    return 'n' in this._incoming_directions;
+}
+
+/*
+ConveyorBelt.prototype.activate = function( player ) {
+    if ( is_null( player ) ) {
+        throw '[error] missing player!';
+    }
+    var cell = player.get_cell();
+    if ( is_null( cell ) ) {
+        throw '[error] missing cell!';
+    }
+    if ( this.toward_east() ) {
+    }
+    else if ( this.toward_south() ) {
+    }
+    else if ( this.toward_west() ) {
+    }
+    else if ( this.toward_north() ) {
+    }
+}
+*/
+
+// //////////////////////////////////////////////////
 // Cell
 
 function Cell( board, x, y ) {
@@ -470,6 +644,7 @@ function Cell( board, x, y ) {
     this._south = new Wall();
     this._west = new Wall();
     this._north = new Wall();
+    // this._conveyor_belt
 }
 
 // flush
@@ -543,6 +718,59 @@ Cell.prototype.set_end = function() {
 
 Cell.prototype.is_end = function() {
     return ( this._end === true );
+}
+
+// conveyor belt
+
+Cell.prototype.has_conveyor_belt = function() {
+    return is_not_null( this._conveyor_belt );
+}
+
+Cell.prototype.get_conveyor_belt = function() {
+    return this._conveyor_belt;
+}
+
+Cell.prototype.set_conveyor_belt_direction = function( direction_char ) {
+    if ( is_not_null( this._conveyor_belt ) ) {
+        throw '[error] conveyor belt already set!';
+    }
+    this._conveyor_belt = new ConveyorBelt( direction_char );
+}
+
+Cell.prototype.has_conveyor_belt_toward_east = function() {
+    return is_not_null( this._conveyor_belt ) && this._conveyor_belt.toward_east();
+}
+
+Cell.prototype.has_conveyor_belt_toward_south = function() {
+    return is_not_null( this._conveyor_belt ) && this._conveyor_belt.toward_south();
+}
+
+Cell.prototype.has_conveyor_belt_toward_west = function() {
+    return is_not_null( this._conveyor_belt ) && this._conveyor_belt.toward_west();
+}
+
+Cell.prototype.has_conveyor_belt_toward_north = function() {
+    return is_not_null( this._conveyor_belt ) && this._conveyor_belt.toward_north();
+}
+
+Cell.prototype.has_conveyor_belt_coming_from_east = function() {
+    var neighbour = this.get_east_cell();
+    return is_not_null( neighbour ) && neighbour.has_conveyor_belt_toward_west();
+}
+
+Cell.prototype.has_conveyor_belt_coming_from_south = function() {
+    var neighbour = this.get_south_cell();
+    return is_not_null( neighbour ) && neighbour.has_conveyor_belt_toward_north();
+}
+
+Cell.prototype.has_conveyor_belt_coming_from_west = function() {
+    var neighbour = this.get_west_cell();
+    return is_not_null( neighbour ) && neighbour.has_conveyor_belt_toward_east();
+}
+
+Cell.prototype.has_conveyor_belt_coming_from_north = function() {
+    var neighbour = this.get_north_cell();
+    return is_not_null( neighbour ) && neighbour.has_conveyor_belt_toward_south();
 }
 
 // hole
@@ -1121,39 +1349,39 @@ Robot.prototype.repair = function( state ) {
 
 // move
 
-Robot.prototype.move_east = function( state ) {
+Robot.prototype.move_east = function( state, without_pushing ) {
     if ( is_null( this._cell ) ) {
         throw '[error] robot ' + this.id + ': missing cell!';
     }
     console.log( '[server] robot ' + this.id + ' moves east...' );
-    return this.move_to_cell( state, this._cell.get_east_wall(), this._cell.get_east_cell(), Robot.prototype.move_east );
+    return this.move_to_cell( state, without_pushing, this._cell.get_east_wall(), this._cell.get_east_cell(), Robot.prototype.move_east );
 }
 
-Robot.prototype.move_south = function( state ) {
+Robot.prototype.move_south = function( state, without_pushing ) {
     if ( is_null( this._cell ) ) {
         throw '[error] robot ' + this.id + ': missing cell!';
     }
     console.log( '[server] robot ' + this.id + ' moves south...' );
-    return this.move_to_cell( state, this._cell.get_south_wall(), this._cell.get_south_cell(), Robot.prototype.move_south );
+    return this.move_to_cell( state, without_pushing, this._cell.get_south_wall(), this._cell.get_south_cell(), Robot.prototype.move_south );
 }
 
-Robot.prototype.move_west = function( state ) {
+Robot.prototype.move_west = function( state, without_pushing ) {
     if ( is_null( this._cell ) ) {
         throw '[error] robot ' + this.id + ': missing cell!';
     }
     console.log( '[server] robot ' + this.id + ' moves west...' );
-    return this.move_to_cell( state, this._cell.get_west_wall(), this._cell.get_west_cell(), Robot.prototype.move_west );
+    return this.move_to_cell( state, without_pushing, this._cell.get_west_wall(), this._cell.get_west_cell(), Robot.prototype.move_west );
 }
 
-Robot.prototype.move_north = function( state ) {
+Robot.prototype.move_north = function( state, without_pushing ) {
     if ( is_null( this._cell ) ) {
         throw '[error] robot ' + this.id + ': missing cell!';
     }
     console.log( '[server] robot ' + this.id + ' moves north...' );
-    return this.move_to_cell( state, this._cell.get_north_wall(), this._cell.get_north_cell(), Robot.prototype.move_north );
+    return this.move_to_cell( state, without_pushing, this._cell.get_north_wall(), this._cell.get_north_cell(), Robot.prototype.move_north );
 }
 
-Robot.prototype.move_to_cell = function( state, wall, cell, push_fn ) {
+Robot.prototype.move_to_cell = function( state, without_pushing, wall, cell, push_fn ) {
     
     // wall
     if ( is_not_null( wall ) && wall.is_closed() ) {
@@ -1173,13 +1401,17 @@ Robot.prototype.move_to_cell = function( state, wall, cell, push_fn ) {
     // push other robot if any ( using the push_fn method )
     var other_robot = cell.get_robot();
     if ( is_not_null( other_robot ) ) {
-         console.log( '[server] robot ' + this.id + ' tries to push robot ' + other_robot.id + '...' );
-         if ( push_fn.apply( other_robot, [state] ) === false ) {
+        if ( without_pushing ) {
+            console.log( '[server] robot ' + this.id + ' could not move to target cell as it is occupied by robot ' + other_robot.id + '...' );
+            return false;
+        }
+        console.log( '[server] robot ' + this.id + ' tries to push robot ' + other_robot.id + '...' );
+        if ( push_fn.apply( other_robot, [state, without_pushing] ) === false ) {
             // treat the other robot as a wall
             console.log( '[server] robot ' + this.id + ' hits robot ' + other_robot.id + '...' );
             this.damage( state, 1 );
             return false; // robot does not move... ( as other robot does not move )
-         }
+        }
     }
     
     // move
@@ -1515,48 +1747,6 @@ function server_select_registers( plynd_metadata, plynd_state, request, success_
     catch( err ) {
         error_fn( null, server_error( err ) );
     }
-    
-    /*
-    var board = get_board( metadata, state );
-    var robot = get_current_robot( metadata, state );
-    console.log( '[server] > save_programs: robot: ' + JSON.stringify( robot ) );
-    
-    // apply directly
-    // state = apply_programs( metadata, state, board, robot, request.program_positions );
-    
-    state = save_programs( metadata, state, board, robot, request.program_positions );
-    console.log( '[server] > save_programs: programs: ' + JSON.stringify( request.program_positions ) );
-
-    var event = { endTurn: true };
-    
-    if ( everyone_has_played( metadata, state ) ) {
-        
-        console.log( '[server] > triggre end of turn...' );
-        
-        // trigger end of turn
-        state = apply_all_programs( metadata, state, board );
-        
-        // compute winner                
-        var winnerID = compute_winner_ids( metadata, state );
-        if ( winnerID ) {
-            event.winnerID = winnerID;    
-        }
-        
-        // compute eliminated
-        var eliminatedID = compute_eliminated_ids( metadata, state );
-        if ( eliminatedID ) {
-            event.eliminatedID = eliminatedID;    
-        }
-        
-        // reshuffle programs
-        state = build_turn_state( metadata, state );
-    }
-    
-    // save robots           
-    event.robots = state.robots;
-    
-    // console.log( '[server] > play_programs: event: ' + JSON.stringify( event ) );
-    */
 }
 
 if ( typeof Plynd !== 'undefined' ) { 
@@ -1622,3 +1812,4 @@ if ( typeof Plynd !== 'undefined' ) {
 // TODO: implement repair action
 // TODO: implement conveyor belt class
 // TODO: implement error class
+// TODO: check ludism for new good rules
