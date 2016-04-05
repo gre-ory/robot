@@ -754,5 +754,163 @@ var test_plynd_state = null;
     } );
 }
 
+{
+    start_test( 'move: conveyor belts' );
+    {
+        var board_text = '';
+        board_text += '       ';
+        board_text += '+ + + +';
+        board_text += ' V V < ';
+        board_text += '+ + + +';
+        board_text += ' >   < ';
+        board_text += '+ + + +';
+        board_text += ' > A A ';
+        board_text += '+ + + +';
+        var board = load_board_from_text( board_text );
+        var robot = new Robot( 42 );
+        {
+            robot.initialize( board.get_cell( 0, 0 ) );
+            expect_robot_position( robot, 0, 0, 's' );
+            robot.activate_conveyor_belt();
+            expect_robot_position( robot, 0, 1, 'e' );
+            robot.activate_conveyor_belt();
+            expect_robot_position( robot, 1, 1, 'e' );
+        }
+        {
+            robot.initialize( board.get_cell( 0, 2 ) );
+            expect_robot_position( robot, 0, 2, 'w' );
+            robot.activate_conveyor_belt();
+            expect_robot_position( robot, 1, 2, 's' );
+            robot.activate_conveyor_belt();
+            expect_robot_position( robot, 1, 1, 's' );
+        }
+        {
+            robot.initialize( board.get_cell( 2, 0 ) );
+            expect_robot_position( robot, 2, 0, 'n' );
+            robot.activate_conveyor_belt();
+            expect_robot_position( robot, 1, 0, 'w' );
+            robot.activate_conveyor_belt();
+            expect_robot_position( robot, 1, 1, 'w' );
+        }
+        {
+            robot.initialize( board.get_cell( 2, 2 ) );
+            expect_robot_position( robot, 2, 2, 's' );
+            robot.activate_conveyor_belt();
+            expect_robot_position( robot, 2, 1, 'e' );
+            robot.activate_conveyor_belt();
+            expect_robot_position( robot, 1, 1, 'e' );
+        }
+    }
+    {
+        var board_text = '';
+        board_text += '       ';
+        board_text += '+ + + +';
+        board_text += ' > V V ';
+        board_text += '+ + + +';
+        board_text += ' >   < ';
+        board_text += '+ + + +';
+        board_text += ' A A < ';
+        board_text += '+ + + +';
+        var board = load_board_from_text( board_text );
+        var robot = new Robot( 42 );
+        {
+            robot.initialize( board.get_cell( 0, 0 ) );
+            expect_robot_position( robot, 0, 0, 's' );
+            robot.activate_conveyor_belt();
+            expect_robot_position( robot, 1, 0, 'w' );
+            robot.activate_conveyor_belt();
+            expect_robot_position( robot, 1, 1, 'w' );
+        }
+        {
+            robot.initialize( board.get_cell( 0, 2 ) );
+            expect_robot_position( robot, 0, 2, 'e' );
+            robot.activate_conveyor_belt();
+            expect_robot_position( robot, 0, 1, 's' );
+            robot.activate_conveyor_belt();
+            expect_robot_position( robot, 1, 1, 's' );
+        }
+        {
+            robot.initialize( board.get_cell( 2, 0 ) );
+            expect_robot_position( robot, 2, 0, 'e' );
+            robot.activate_conveyor_belt();
+            expect_robot_position( robot, 2, 1, 's' );
+            robot.activate_conveyor_belt();
+            expect_robot_position( robot, 1, 1, 's' );
+        }
+        {
+            robot.initialize( board.get_cell( 2, 2 ) );
+            expect_robot_position( robot, 2, 2, 'w' );
+            robot.activate_conveyor_belt();
+            expect_robot_position( robot, 1, 2, 'n' );
+            robot.activate_conveyor_belt();
+            expect_robot_position( robot, 1, 1, 'n' );
+        }
+    }
+}
+
+{
+    start_test( 'move & die: conveyor belts' );
+    {
+        var board_text = '';
+        board_text += '       ';
+        board_text += '+ + + +';
+        board_text += '   V   ';
+        board_text += '+ +-+ +';
+        board_text += ' > # < ';
+        board_text += '+ + + +';
+        board_text += ' V   A ';
+        board_text += '+ + + +';
+        var board = load_board_from_text( board_text );
+        var robot = new Robot( 42 );
+        {
+            robot.initialize( board.get_cell( 0, 0 ) );
+            expect_robot_position( robot, 0, 0, 'e', 10 );
+            robot.move_forward();
+            expect_robot_position( robot, 1, 0, 'e', 10 );
+            robot.activate_conveyor_belt();
+            expect_robot_position( robot, 1, 0, 'e', 9 );
+            robot.activate_conveyor_belt();
+            robot.activate_conveyor_belt();
+            robot.activate_conveyor_belt();
+            robot.activate_conveyor_belt();
+            robot.activate_conveyor_belt();
+            robot.activate_conveyor_belt();
+            robot.activate_conveyor_belt();
+            robot.activate_conveyor_belt();
+            expect_robot_position( robot, 1, 0, 'e', 1 );
+            robot.activate_conveyor_belt();
+            expect_robot_position( robot, null, null, null, 0 );
+        }
+        {
+            robot.initialize( board.get_cell( 0, 0 ) );
+            expect_robot_position( robot, 0, 0, 'e', 10 );
+            robot.slide_right();
+            expect_robot_position( robot, 0, 1, 'e', 10 );
+            robot.activate_conveyor_belt();
+            expect_robot_position( robot, null, null, null, 0 );
+        }
+        {
+            robot.initialize( board.get_cell( 1, 2 ) );
+            expect_robot_position( robot, 1, 2, 's', 10 );
+            robot.uturn();
+            robot.slide_right();
+            expect_robot_position( robot, 2, 2, 'n', 10 );
+            robot.activate_conveyor_belt();
+            expect_robot_position( robot, 2, 1, 'w', 10 );
+            robot.move_forward();
+            expect_robot_position( robot, null, null, null, 0 );
+        }
+        {
+            robot.initialize( board.get_cell( 1, 2 ) );
+            expect_robot_position( robot, 1, 2, 's', 10 );
+            robot.uturn();
+            robot.slide_left();
+            expect_robot_position( robot, 0, 2, 'n', 10 );
+            robot.activate_conveyor_belt();
+            expect_robot_position( robot, null, null, null, 0 );
+        }
+    }
+}
+
 
 test_report();

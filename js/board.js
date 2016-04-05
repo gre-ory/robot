@@ -1121,6 +1121,71 @@ Robot.prototype.get_cell = function() {
     return this._cell;
 }
 
+Robot.prototype.activate_conveyor_belt = function( state ) {
+    if ( is_null( this._cell ) ) {
+        throw '[error] missing cell!';
+    }
+    if ( !this._cell.has_conveyor_belt() ) {
+        return true;
+    }
+    else if ( this._cell.has_conveyor_belt_toward_east() ) {
+        if ( !this.move_east( state, /* by_conveyor_belt */ true ) ) {
+            return false;
+        }
+        else if ( is_null( this._cell ) ) {
+            return true; // robot died
+        }
+        else if ( this._cell.has_conveyor_belt_toward_south() ) {
+            this.turn_right( state );
+        }
+        else if ( this._cell.has_conveyor_belt_toward_north() ) {
+            this.turn_left( state );
+        }
+    }
+    else if ( this._cell.has_conveyor_belt_toward_south() ) {
+        if ( !this.move_south( state, /* by_conveyor_belt */ true ) ) {
+            return false;
+        }
+        else if ( is_null( this._cell ) ) {
+            return true; // robot died
+        }
+        else if ( this._cell.has_conveyor_belt_toward_east() ) {
+            this.turn_left( state );
+        }
+        else if ( this._cell.has_conveyor_belt_toward_west() ) {
+            this.turn_right( state );
+        }
+    }
+    else if ( this._cell.has_conveyor_belt_toward_west() ) {
+        if ( !this.move_west( state, /* by_conveyor_belt */ true ) ) {
+            return false;
+        }
+        else if ( is_null( this._cell ) ) {
+            return true; // robot died
+        }
+        else if ( this._cell.has_conveyor_belt_toward_south() ) {
+            this.turn_left( state );
+        }
+        else if ( this._cell.has_conveyor_belt_toward_north() ) {
+            this.turn_right( state );
+        }
+    }
+    else if ( this._cell.has_conveyor_belt_toward_north() ) {
+        if ( !this.move_north( state, /* by_conveyor_belt */ true ) ) {
+            return false;
+        }
+        else if ( is_null( this._cell ) ) {
+            return true; // robot died
+        }
+        else if ( this._cell.has_conveyor_belt_toward_east() ) {
+            this.turn_right( state );
+        }
+        else if ( this._cell.has_conveyor_belt_toward_west() ) {
+            this.turn_left( state );
+        }
+    }
+}
+
 // orientation
 
 Robot.prototype.unset_orientation = function() {
@@ -1231,64 +1296,64 @@ Robot.prototype.move_2_forward = function( state ) {
 Robot.prototype.move_forward = function( state ) {
     console.log( '[server] robot ' + this.id + ' moves forward...' );
     if ( this.toward_north() ) {
-        this.move_north( state );
+        this.move_north( state, /* by_conveyor_belt */ false );
     }
     else if ( this.toward_east() ) {
-        this.move_east( state );
+        this.move_east( state, /* by_conveyor_belt */ false );
     }
     else if ( this.toward_south() ) {
-        this.move_south( state );
+        this.move_south( state, /* by_conveyor_belt */ false );
     }
     else if ( this.toward_west() ) {
-        this.move_west( state );
+        this.move_west( state, /* by_conveyor_belt */ false );
     }
 }
 
 Robot.prototype.move_backward = function( state ) {
     console.log( '[server] robot ' + this.id + ' moves backward...' );
     if ( this.toward_north() ) {
-        this.move_south();
+        this.move_south( state, /* by_conveyor_belt */ false );
     }
     else if ( this.toward_east() ) {
-        this.move_west();
+        this.move_west( state, /* by_conveyor_belt */ false );
     }
     else if ( this.toward_south() ) {
-        this.move_north();
+        this.move_north( state, /* by_conveyor_belt */ false );
     }
     else if ( this.toward_west() ) {
-        this.move_east();
+        this.move_east( state, /* by_conveyor_belt */ false );
     }
 }
 
 Robot.prototype.slide_right = function( state ) {
     console.log( '[server] robot ' + this.id + ' slides right...' );
     if ( this.toward_north() ) {
-        this.move_east();
+        this.move_east( state, /* by_conveyor_belt */ false );
     }
     else if ( this.toward_east() ) {
-        this.move_south();
+        this.move_south( state, /* by_conveyor_belt */ false );
     }
     else if ( this.toward_south() ) {
-        this.move_west();
+        this.move_west( state, /* by_conveyor_belt */ false );
     }
     else if ( this.toward_west() ) {
-        this.move_north();
+        this.move_north( state, /* by_conveyor_belt */ false );
     }
 }
 
 Robot.prototype.slide_left = function( state ) {
     console.log( '[server] robot ' + this.id + ' slides left...' );
     if ( this.toward_north() ) {
-        this.move_west();
+        this.move_west( state, /* by_conveyor_belt */ false );
     }
     else if ( this.toward_east() ) {
-        this.move_north();
+        this.move_north( state, /* by_conveyor_belt */ false );
     }
     else if ( this.toward_south() ) {
-        this.move_east();
+        this.move_east( state, /* by_conveyor_belt */ false );
     }
     else if ( this.toward_west() ) {
-        this.move_south();
+        this.move_south( state, /* by_conveyor_belt */ false );
     }
 }
 
@@ -1349,39 +1414,39 @@ Robot.prototype.repair = function( state ) {
 
 // move
 
-Robot.prototype.move_east = function( state, without_pushing ) {
+Robot.prototype.move_east = function( state, by_conveyor_belt ) {
     if ( is_null( this._cell ) ) {
         throw '[error] robot ' + this.id + ': missing cell!';
     }
     console.log( '[server] robot ' + this.id + ' moves east...' );
-    return this.move_to_cell( state, without_pushing, this._cell.get_east_wall(), this._cell.get_east_cell(), Robot.prototype.move_east );
+    return this.move_to_cell( state, by_conveyor_belt, this._cell.get_east_wall(), this._cell.get_east_cell(), Robot.prototype.move_east );
 }
 
-Robot.prototype.move_south = function( state, without_pushing ) {
+Robot.prototype.move_south = function( state, by_conveyor_belt ) {
     if ( is_null( this._cell ) ) {
         throw '[error] robot ' + this.id + ': missing cell!';
     }
     console.log( '[server] robot ' + this.id + ' moves south...' );
-    return this.move_to_cell( state, without_pushing, this._cell.get_south_wall(), this._cell.get_south_cell(), Robot.prototype.move_south );
+    return this.move_to_cell( state, by_conveyor_belt, this._cell.get_south_wall(), this._cell.get_south_cell(), Robot.prototype.move_south );
 }
 
-Robot.prototype.move_west = function( state, without_pushing ) {
+Robot.prototype.move_west = function( state, by_conveyor_belt ) {
     if ( is_null( this._cell ) ) {
         throw '[error] robot ' + this.id + ': missing cell!';
     }
     console.log( '[server] robot ' + this.id + ' moves west...' );
-    return this.move_to_cell( state, without_pushing, this._cell.get_west_wall(), this._cell.get_west_cell(), Robot.prototype.move_west );
+    return this.move_to_cell( state, by_conveyor_belt, this._cell.get_west_wall(), this._cell.get_west_cell(), Robot.prototype.move_west );
 }
 
-Robot.prototype.move_north = function( state, without_pushing ) {
+Robot.prototype.move_north = function( state, by_conveyor_belt ) {
     if ( is_null( this._cell ) ) {
         throw '[error] robot ' + this.id + ': missing cell!';
     }
     console.log( '[server] robot ' + this.id + ' moves north...' );
-    return this.move_to_cell( state, without_pushing, this._cell.get_north_wall(), this._cell.get_north_cell(), Robot.prototype.move_north );
+    return this.move_to_cell( state, by_conveyor_belt, this._cell.get_north_wall(), this._cell.get_north_cell(), Robot.prototype.move_north );
 }
 
-Robot.prototype.move_to_cell = function( state, without_pushing, wall, cell, push_fn ) {
+Robot.prototype.move_to_cell = function( state, by_conveyor_belt, wall, cell, push_fn ) {
     
     // wall
     if ( is_not_null( wall ) && wall.is_closed() ) {
@@ -1401,12 +1466,12 @@ Robot.prototype.move_to_cell = function( state, without_pushing, wall, cell, pus
     // push other robot if any ( using the push_fn method )
     var other_robot = cell.get_robot();
     if ( is_not_null( other_robot ) ) {
-        if ( without_pushing ) {
-            console.log( '[server] robot ' + this.id + ' could not move to target cell as it is occupied by robot ' + other_robot.id + '...' );
+        if ( by_conveyor_belt ) {
+            console.log( '[server] robot ' + this.id + ' could not be pushed by conveyor belt as target cell is occupied by robot ' + other_robot.id + '...' );
             return false;
         }
         console.log( '[server] robot ' + this.id + ' tries to push robot ' + other_robot.id + '...' );
-        if ( push_fn.apply( other_robot, [state, without_pushing] ) === false ) {
+        if ( push_fn.apply( other_robot, [state, by_conveyor_belt] ) === false ) {
             // treat the other robot as a wall
             console.log( '[server] robot ' + this.id + ' hits robot ' + other_robot.id + '...' );
             this.damage( state, 1 );
@@ -1415,8 +1480,8 @@ Robot.prototype.move_to_cell = function( state, without_pushing, wall, cell, pus
     }
     
     // move
-    this.set_cell( cell );  
-    
+    this.set_cell( cell );
+
     // hole
     if ( cell.is_hole() ) {
         console.log( '[server] robot ' + this.id + ' falls in hole ' + cell.x + '-' + cell.y + '.' );
