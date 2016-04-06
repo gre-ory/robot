@@ -769,7 +769,7 @@ var test_plynd_state = null;
         var board = load_board_from_text( board_text );
         var robot = new Robot( 42 );
         {
-            robot.initialize( board.get_cell( 0, 0 ) );
+            robot.initialize( board.get_cell( 0, 0 ), 's' );
             expect_robot_position( robot, 0, 0, 's' );
             robot.activate_conveyor_belt();
             expect_robot_position( robot, 0, 1, 'e' );
@@ -777,7 +777,7 @@ var test_plynd_state = null;
             expect_robot_position( robot, 1, 1, 'e' );
         }
         {
-            robot.initialize( board.get_cell( 0, 2 ) );
+            robot.initialize( board.get_cell( 0, 2 ), 'w' );
             expect_robot_position( robot, 0, 2, 'w' );
             robot.activate_conveyor_belt();
             expect_robot_position( robot, 1, 2, 's' );
@@ -785,7 +785,7 @@ var test_plynd_state = null;
             expect_robot_position( robot, 1, 1, 's' );
         }
         {
-            robot.initialize( board.get_cell( 2, 0 ) );
+            robot.initialize( board.get_cell( 2, 0 ), 'n' );
             expect_robot_position( robot, 2, 0, 'n' );
             robot.activate_conveyor_belt();
             expect_robot_position( robot, 1, 0, 'w' );
@@ -793,7 +793,7 @@ var test_plynd_state = null;
             expect_robot_position( robot, 1, 1, 'w' );
         }
         {
-            robot.initialize( board.get_cell( 2, 2 ) );
+            robot.initialize( board.get_cell( 2, 2 ), 's' );
             expect_robot_position( robot, 2, 2, 's' );
             robot.activate_conveyor_belt();
             expect_robot_position( robot, 2, 1, 'e' );
@@ -814,7 +814,7 @@ var test_plynd_state = null;
         var board = load_board_from_text( board_text );
         var robot = new Robot( 42 );
         {
-            robot.initialize( board.get_cell( 0, 0 ) );
+            robot.initialize( board.get_cell( 0, 0 ), 's' );
             expect_robot_position( robot, 0, 0, 's' );
             robot.activate_conveyor_belt();
             expect_robot_position( robot, 1, 0, 'w' );
@@ -822,28 +822,85 @@ var test_plynd_state = null;
             expect_robot_position( robot, 1, 1, 'w' );
         }
         {
-            robot.initialize( board.get_cell( 0, 2 ) );
-            expect_robot_position( robot, 0, 2, 'e' );
+            robot.initialize( board.get_cell( 0, 2 ), 's' );
+            expect_robot_position( robot, 0, 2, 's' );
             robot.activate_conveyor_belt();
-            expect_robot_position( robot, 0, 1, 's' );
+            expect_robot_position( robot, 0, 1, 'w' );
+            robot.activate_conveyor_belt();
+            expect_robot_position( robot, 1, 1, 'w' );
+        }
+        {
+            robot.initialize( board.get_cell( 2, 0 ), 's' );
+            expect_robot_position( robot, 2, 0, 's' );
+            robot.activate_conveyor_belt();
+            expect_robot_position( robot, 2, 1, 'w' );
+            robot.activate_conveyor_belt();
+            expect_robot_position( robot, 1, 1, 'w' );
+        }
+        {
+            robot.initialize( board.get_cell( 2, 2 ), 'e' );
+            expect_robot_position( robot, 2, 2, 'e' );
+            robot.activate_conveyor_belt();
+            expect_robot_position( robot, 1, 2, 's' );
             robot.activate_conveyor_belt();
             expect_robot_position( robot, 1, 1, 's' );
         }
+    }
+}
+
+{
+    start_test( 'move blocked: conveyor belts' );
+    {
+        var board_text = '';
+        board_text += '       ';
+        board_text += '+ + + +';
+        board_text += '   V   ';
+        board_text += '+ + + +';
+        board_text += ' >   < ';
+        board_text += '+ + + +';
+        board_text += '   A   ';
+        board_text += '+ + + +';
+        var board = load_board_from_text( board_text );
+        var other_robot = new Robot( 43 );
+        var robot = new Robot( 42 );
         {
-            robot.initialize( board.get_cell( 2, 0 ) );
-            expect_robot_position( robot, 2, 0, 'e' );
-            robot.activate_conveyor_belt();
-            expect_robot_position( robot, 2, 1, 's' );
-            robot.activate_conveyor_belt();
-            expect_robot_position( robot, 1, 1, 's' );
+            robot.initialize( board.get_cell( 1, 0 ), 'e' );
+            other_robot.initialize( board.get_cell( 1, 1 ), 'w' );
+            expect_robot_position( robot, 1, 0, 'e', 10 );
+            expect_robot_position( other_robot, 1, 1, 'w', 10 );
         }
         {
-            robot.initialize( board.get_cell( 2, 2 ) );
-            expect_robot_position( robot, 2, 2, 'w' );
             robot.activate_conveyor_belt();
-            expect_robot_position( robot, 1, 2, 'n' );
+            other_robot.activate_conveyor_belt();
+            expect_robot_position( robot, 1, 0, 'e', 10 );
+            expect_robot_position( other_robot, 1, 1, 'w', 10 );
+        }
+        {
+            other_robot.move_forward();
+            expect_robot_position( robot, 1, 0, 'e', 10 );
+            expect_robot_position( other_robot, 0, 1, 'w', 10 );
+        }
+        {
             robot.activate_conveyor_belt();
-            expect_robot_position( robot, 1, 1, 'n' );
+            other_robot.activate_conveyor_belt();
+            expect_robot_position( robot, 1, 1, 'e', 10 );
+            expect_robot_position( other_robot, 0, 1, 'w', 10 );
+        }
+        {
+            other_robot.move_backward();
+            expect_robot_position( robot, 2, 1, 'e', 10 );
+            expect_robot_position( other_robot, 1, 1, 'w', 10 );
+        }
+        {
+            other_robot.move_forward();
+            expect_robot_position( robot, 2, 1, 'e', 10 );
+            expect_robot_position( other_robot, 0, 1, 'w', 10 );
+        }
+        {
+            other_robot.activate_conveyor_belt();
+            robot.activate_conveyor_belt();
+            expect_robot_position( robot, 2, 1, 'e', 10 );
+            expect_robot_position( other_robot, 1, 1, 'w', 10 );
         }
     }
 }
@@ -863,7 +920,7 @@ var test_plynd_state = null;
         var board = load_board_from_text( board_text );
         var robot = new Robot( 42 );
         {
-            robot.initialize( board.get_cell( 0, 0 ) );
+            robot.initialize( board.get_cell( 0, 0 ), 'e' );
             expect_robot_position( robot, 0, 0, 'e', 10 );
             robot.move_forward();
             expect_robot_position( robot, 1, 0, 'e', 10 );
@@ -882,7 +939,7 @@ var test_plynd_state = null;
             expect_robot_position( robot, null, null, null, 0 );
         }
         {
-            robot.initialize( board.get_cell( 0, 0 ) );
+            robot.initialize( board.get_cell( 0, 0 ), 'e' );
             expect_robot_position( robot, 0, 0, 'e', 10 );
             robot.slide_right();
             expect_robot_position( robot, 0, 1, 'e', 10 );
@@ -890,7 +947,7 @@ var test_plynd_state = null;
             expect_robot_position( robot, null, null, null, 0 );
         }
         {
-            robot.initialize( board.get_cell( 1, 2 ) );
+            robot.initialize( board.get_cell( 1, 2 ), 's' );
             expect_robot_position( robot, 1, 2, 's', 10 );
             robot.uturn();
             robot.slide_right();
@@ -901,7 +958,7 @@ var test_plynd_state = null;
             expect_robot_position( robot, null, null, null, 0 );
         }
         {
-            robot.initialize( board.get_cell( 1, 2 ) );
+            robot.initialize( board.get_cell( 1, 2 ), 's' );
             expect_robot_position( robot, 1, 2, 's', 10 );
             robot.uturn();
             robot.slide_left();

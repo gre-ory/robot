@@ -439,8 +439,13 @@ function Orientation() {
     // this._index
 }
 
-Orientation.prototype.initialize = function() {
-    this.set( random.number( 4 ) ); 
+Orientation.prototype.initialize = function( orientation_char ) {
+    if ( is_not_null( orientation_char ) ) {
+        this.set_char( orientation_char );
+    }
+    if ( is_null( this._index ) ) {
+        this.set( random.number( 4 ) );
+    }
 }
 
 Orientation.prototype.get_char = function() {
@@ -923,9 +928,9 @@ function Robot( id ) {
 
 // initialize
 
-Robot.prototype.initialize = function( cell ) {
+Robot.prototype.initialize = function( cell, orientation_char ) {
     this.set_cell( cell );
-    this.orientation.initialize();
+    this.orientation.initialize( orientation_char );
     this.points = max_points;
     this._programs = Program.select( this.points, false );
     this._registers = [];
@@ -1129,6 +1134,7 @@ Robot.prototype.activate_conveyor_belt = function( state ) {
         return true;
     }
     else if ( this._cell.has_conveyor_belt_toward_east() ) {
+        console.log( '[server] conveyor belt under robot ' + this.id + ' moves toward east...' );
         if ( !this.move_east( state, /* by_conveyor_belt */ true ) ) {
             return false;
         }
@@ -1143,6 +1149,7 @@ Robot.prototype.activate_conveyor_belt = function( state ) {
         }
     }
     else if ( this._cell.has_conveyor_belt_toward_south() ) {
+        console.log( '[server] conveyor belt under robot ' + this.id + ' moves toward south...' );
         if ( !this.move_south( state, /* by_conveyor_belt */ true ) ) {
             return false;
         }
@@ -1157,6 +1164,7 @@ Robot.prototype.activate_conveyor_belt = function( state ) {
         }
     }
     else if ( this._cell.has_conveyor_belt_toward_west() ) {
+        console.log( '[server] conveyor belt under robot ' + this.id + ' moves toward west...' );
         if ( !this.move_west( state, /* by_conveyor_belt */ true ) ) {
             return false;
         }
@@ -1171,6 +1179,7 @@ Robot.prototype.activate_conveyor_belt = function( state ) {
         }
     }
     else if ( this._cell.has_conveyor_belt_toward_north() ) {
+        console.log( '[server] conveyor belt under robot ' + this.id + ' moves toward north...' );
         if ( !this.move_north( state, /* by_conveyor_belt */ true ) ) {
             return false;
         }
@@ -1757,7 +1766,14 @@ State.prototype.trigger_end_of_turn = function() {
             robot.activate_register( this, phase );
         }
 
-        // board
+        // conveyor belts
+
+        robots_ids = random.shuffle( robots_ids );
+        for ( var i = 0 ; i < robots_ids.length; ++i ) {
+            var robot = this._robots[ robots_ids[ i ] ];
+            robot.activate_conveyor_belt( this );
+        }
+
     }
 }
 
